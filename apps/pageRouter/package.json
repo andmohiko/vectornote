@@ -1,0 +1,44 @@
+{
+  "name": "@firebase-monorepo/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "lint:tsc": "tsc --noEmit",
+    "lint:biome": "biome lint ./src",
+    "lint:cspell": "cspell -c ../../cspell.json src/**/*",
+    "lint:all": "pnpm lint:tsc && pnpm lint:biome && pnpm lint:cspell",
+    "clean": "rimraf -rf .turbo node_modules .next"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^4.1.3",
+    "@mantine/core": "^8.1.2",
+    "@mantine/dates": "^8.1.2",
+    "@mantine/dropzone": "^8.1.2",
+    "@mantine/hooks": "^8.1.2",
+    "@mantine/notifications": "^8.1.2",
+    "@sentry/nextjs": "^9.10.1",
+    "classnames": "^2.5.1",
+    "dayjs": "^1.11.13",
+    "firebase": "^11.10.0",
+    "next": "15.2.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-hook-form": "7.55.0",
+    "react-icons": "^5.5.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/react": "19.0.12",
+    "@types/react-dom": "19.0.4",
+    "typescript": "5.3.3"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=6.0.0"
+  }
+}
