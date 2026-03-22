@@ -9,6 +9,8 @@ import Footer from '../components/Footer'
 import Header from '../components/Header'
 
 import TanStackQueryProvider from '../integrations/tanstack-query/root-provider'
+import { Providers } from '../providers'
+import { useFirebaseAuthContext } from '../providers/FirebaseAuthProvider'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
@@ -46,6 +48,22 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   shellComponent: RootDocument,
 })
 
+const AppLayout = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthPath } = useFirebaseAuthContext()
+
+  if (isAuthPath) {
+    return <>{children}</>
+  }
+
+  return (
+    <>
+      <Header />
+      {children}
+      <Footer />
+    </>
+  )
+}
+
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -55,9 +73,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]" suppressHydrationWarning>
         <TanStackQueryProvider>
-          <Header />
-          {children}
-          <Footer />
+          <Providers>
+            <AppLayout>{children}</AppLayout>
+          </Providers>
           {import.meta.env.DEV && (
             <TanStackDevtools
               config={{
