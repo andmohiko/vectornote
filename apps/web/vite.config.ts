@@ -22,7 +22,7 @@ const config = defineConfig({
   ],
   resolve: {
     alias: {
-      '@firebase-monorepo/common': path.resolve(__dirname, '../../packages/common/src')
+      '@vectornote/common': path.resolve(__dirname, '../../packages/common/src')
     }
   }
 })

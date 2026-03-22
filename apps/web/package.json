@@ -1,9 +1,9 @@
 {
-  "name": "@firebase-monorepo/tanstack-start",
+  "name": "@vectornote/web",
   "private": true,
   "type": "module",
   "imports": {
-    "#/*": "./src/*"
+    "@/*": "./src/*"
   },
   "scripts": {
     "dev": "vite dev --port 3000",
@@ -15,7 +15,7 @@
     "check": "biome check"
   },
   "dependencies": {
-    "@firebase-monorepo/common": "workspace:*",
+    "@vectornote/common": "workspace:*",
     "@hookform/resolvers": "^4.1.3",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-dialog": "^1.1.15",

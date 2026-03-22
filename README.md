@@ -37,10 +37,9 @@
 
 | type | name                                                                | description 　　　　　　                    | default port |
 | ---- | ------------------------------------------------------------------- | ------------------------------------------- | ------------ |
-| app  | [@firebase-monorepo/web](./apps/web/)                              | Web アプリ本体                              | ---          |
-| app  | [@firebase-monorepo/tanstack-start](./apps/tanstack-start/)        | TanStack Start SPA モードアプリ             | 3000         |
-| app  | [@firebase-monorepo/functions](./apps/functions/)                  | Cloud Functions                             | ---          |
-| pkg  | [@firebase-monorepo/common](./packages/common/)                    | 共通で使用する型定義など                     | ---          |
+| app  | [@vectornote/web](./apps/web/)                              | Web アプリ本体                              | ---          |
+| app  | [@vectornote/functions](./apps/functions/)                  | Cloud Functions                             | ---          |
+| pkg  | [@vectornote/common](./packages/common/)                    | 共通で使用する型定義など                     | ---          |
 
 ## 環境構築
 

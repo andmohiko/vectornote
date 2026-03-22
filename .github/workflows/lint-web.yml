@@ -1,4 +1,4 @@
-name: Run @firebase-monorepo/web lint
+name: Run @vectornote/web lint
 on:
   push:
     paths:
