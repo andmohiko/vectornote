@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
+import { Route as AuthedSearchRouteImport } from './routes/_authed/search'
 import { Route as AuthedAboutRouteImport } from './routes/_authed/about'
 import { Route as AuthedDemoTanstackQueryRouteImport } from './routes/_authed/demo/tanstack-query'
 
@@ -29,6 +30,11 @@ const AuthedIndexRoute = AuthedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedSearchRoute = AuthedSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const AuthedAboutRoute = AuthedAboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -44,11 +50,13 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthedIndexRoute
   '/login': typeof LoginRoute
   '/about': typeof AuthedAboutRoute
+  '/search': typeof AuthedSearchRoute
   '/demo/tanstack-query': typeof AuthedDemoTanstackQueryRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/about': typeof AuthedAboutRoute
+  '/search': typeof AuthedSearchRoute
   '/': typeof AuthedIndexRoute
   '/demo/tanstack-query': typeof AuthedDemoTanstackQueryRoute
 }
@@ -57,19 +65,21 @@ export interface FileRoutesById {
   '/_authed': typeof AuthedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authed/about': typeof AuthedAboutRoute
+  '/_authed/search': typeof AuthedSearchRoute
   '/_authed/': typeof AuthedIndexRoute
   '/_authed/demo/tanstack-query': typeof AuthedDemoTanstackQueryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/about' | '/demo/tanstack-query'
+  fullPaths: '/' | '/login' | '/about' | '/search' | '/demo/tanstack-query'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/about' | '/' | '/demo/tanstack-query'
+  to: '/login' | '/about' | '/search' | '/' | '/demo/tanstack-query'
   id:
     | '__root__'
     | '/_authed'
     | '/login'
     | '/_authed/about'
+    | '/_authed/search'
     | '/_authed/'
     | '/_authed/demo/tanstack-query'
   fileRoutesById: FileRoutesById
@@ -102,6 +112,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/search': {
+      id: '/_authed/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof AuthedSearchRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/about': {
       id: '/_authed/about'
       path: '/about'
@@ -121,12 +138,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthedRouteChildren {
   AuthedAboutRoute: typeof AuthedAboutRoute
+  AuthedSearchRoute: typeof AuthedSearchRoute
   AuthedIndexRoute: typeof AuthedIndexRoute
   AuthedDemoTanstackQueryRoute: typeof AuthedDemoTanstackQueryRoute
 }
 
 const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedAboutRoute: AuthedAboutRoute,
+  AuthedSearchRoute: AuthedSearchRoute,
   AuthedIndexRoute: AuthedIndexRoute,
   AuthedDemoTanstackQueryRoute: AuthedDemoTanstackQueryRoute,
 }

@@ -13,6 +13,10 @@ export { onUpdateNote } from './triggers/onUpdateNote'
 export const api = onRequest(
   {
     memory: '1GiB',
+    // Cloud Run IAM: allUsers に invoker 権限を付与（アプリ側で認証を行う）
+    invoker: 'public',
+    // Cloud Run レベルでの CORS 許可（OPTIONS プリフライトを通す）
+    cors: true,
   },
   app,
 )

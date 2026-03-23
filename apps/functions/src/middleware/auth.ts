@@ -15,6 +15,12 @@ export const authMiddleware = async (
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
+  // CORSプリフライトリクエストはそのまま通す
+  if (req.method === 'OPTIONS') {
+    next()
+    return
+  }
+
   try {
     const authHeader = req.headers.authorization
     if (!authHeader) {
