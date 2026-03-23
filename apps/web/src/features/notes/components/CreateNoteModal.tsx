@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,8 @@ type CreateNoteModalProps = {
 
 export const CreateNoteModal = ({ open, onClose }: CreateNoteModalProps) => {
   const { mutateAsync, isPending } = useCreateNoteMutation()
+  const [formKey, setFormKey] = useState(0)
+
   const handleSubmit = async (values: NoteFormValues) => {
     await mutateAsync(values)
     onClose()
@@ -22,7 +25,12 @@ export const CreateNoteModal = ({ open, onClose }: CreateNoteModalProps) => {
 
   const handleOpenAutoFocus = (e: Event) => {
     e.preventDefault()
-    document.getElementById('content')?.focus()
+    // ショートカットキーで開いた際に入力された文字をクリアするため、
+    // フォームを再マウントしてから本文テキストエリアにフォーカスする
+    setFormKey((k) => k + 1)
+    setTimeout(() => {
+      document.getElementById('content')?.focus()
+    }, 0)
   }
 
   return (
@@ -36,6 +44,7 @@ export const CreateNoteModal = ({ open, onClose }: CreateNoteModalProps) => {
         </DialogHeader>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <NoteForm
+            key={formKey}
             expandContent
             onSubmit={handleSubmit}
             submitLabel="作成"
