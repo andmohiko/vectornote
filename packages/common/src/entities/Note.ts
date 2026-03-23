@@ -12,7 +12,7 @@ export type Note = {
   createdAt: Date
   content: string
   embedding: VectorValue | null
-  keywords: string[]
+  keywords: string
   tags: string[]
   title: string | null
   updatedAt: Date

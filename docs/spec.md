@@ -267,7 +267,7 @@ firestore/
 │               ├── createdAt: Timestamp
 │               ├── content: string
 │               ├── embedding: vector(1536)
-│               ├── keywords: string[]
+│               ├── keywords: string
 │               ├── tags: string[]
 │               ├── title: string
 │               └── updatedAt: Timestamp
@@ -290,7 +290,7 @@ firestore/
 | createdAt | Timestamp | 作成日時 |
 | content | string | メモの本文（必須） |
 | embedding | vector(1536) | ベクトル埋め込み |
-| keywords | string[] | 検索時のキーワード |
+| keywords | string | 検索時のキーワード |
 | tags | string[] | メモのジャンル分け用のタグ |
 | title | string | メモのタイトル（任意） |
 | updatedAt | Timestamp | 更新日時 |
@@ -339,7 +339,7 @@ export interface Note {
   createdAt: Timestamp;
   content: string;
   embedding: number[];
-  keywords: string[];
+  keywords: string;
   tags: string[];
   title: string;
   updatedAt: Timestamp;
@@ -348,7 +348,7 @@ export interface Note {
 export interface NoteInput {
   content: string;
   title?: string;
-  keywords?: string[];
+  keywords?: string;
   tags?: string[];
 }
 

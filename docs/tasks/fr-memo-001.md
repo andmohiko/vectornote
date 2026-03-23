@@ -15,14 +15,14 @@ embedding フィールドは FR-EMBED で別途実装するため、本タスク
 
 | タスク | ステータス |
 |--------|-----------|
-| Task 1: Note エンティティ型定義 | 未着手 |
-| Task 2: Zod バリデーションスキーマ | 未着手 |
-| Task 3: Firestore セキュリティルール更新 | 未着手 |
-| Task 4: Firestore インデックス設定 | 未着手 |
-| Task 5: Firestore Operations 層 | 未着手 |
-| Task 6: メモ作成フック | 未着手 |
-| Task 7: メモ作成フォームコンポーネント | 未着手 |
-| Task 8: メモ作成ページルート | 未着手 |
+| Task 1: Note エンティティ型定義 | 完了 |
+| Task 2: Zod バリデーションスキーマ | 完了 |
+| Task 3: Firestore セキュリティルール更新 | 完了 |
+| Task 4: Firestore インデックス設定 | 完了 |
+| Task 5: Firestore Operations 層 | 完了 |
+| Task 6: メモ作成フック | 完了 |
+| Task 7: メモ作成フォームコンポーネント | 完了 |
+| Task 8: メモ作成ページルート | 完了 |
 
 ---
 
@@ -49,7 +49,7 @@ export type Note = {
   updatedAt: Date
   content: string
   title: string
-  keywords: string[]
+  keywords: string
   tags: string[]
 }
 
@@ -61,7 +61,7 @@ export type CreateNoteDto = Omit<Note, 'noteId' | 'createdAt' | 'updatedAt'> & {
 export type UpdateNoteDto = {
   content?: string
   title?: string
-  keywords?: string[]
+  keywords?: string
   tags?: string[]
   updatedAt: FieldValue
 }
@@ -91,7 +91,7 @@ export const noteFormSchema = z.object({
 export type NoteFormValues = z.infer<typeof noteFormSchema>
 ```
 
-- `keywords` はフォーム上は単一テキスト（カンマ/スペース区切り）、保存時に `string[]` へ変換する
+- `keywords` はフォーム上・保存ともに単一テキスト（string）
 
 ### Task 3: Firestore セキュリティルール更新（共通基盤）
 
@@ -200,14 +200,10 @@ export const useCreateNoteMutation = () => {
     mutationFn: async (values: NoteFormValues) => {
       if (!uid) throw new Error('認証エラー：再ログインしてください')
 
-      const keywords = values.keywords
-        ? values.keywords.split(/[,\s、]+/).filter(Boolean)
-        : []
-
       const dto: CreateNoteDto = {
         content: values.content,
         title: values.title || '',
-        keywords,
+        keywords: values.keywords ?? '',
         tags: values.tags || [],
         createdAt: serverTimestamp,
         updatedAt: serverTimestamp,

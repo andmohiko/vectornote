@@ -54,7 +54,7 @@ export const useNote = (noteId: string) => {
 - TanStack Query の `useMutation` を使用
 - 楽観的更新を実装: `onMutate` でキャッシュを即時更新、`onError` でロールバック
 - `updatedAt` は `serverTimestamp` を使用
-- keywords のテキスト → 配列変換ロジックを含む
+- keywords はそのまま string として扱う
 
 ```typescript
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -74,14 +74,10 @@ export const useUpdateNoteMutation = (noteId: string) => {
     mutationFn: async (values: NoteFormValues) => {
       if (!uid) throw new Error('認証エラー')
 
-      const keywords = values.keywords
-        ? values.keywords.split(/[,\s、]+/).filter(Boolean)
-        : []
-
       const dto: UpdateNoteDto = {
         content: values.content,
         title: values.title || '',
-        keywords,
+        keywords: values.keywords ?? '',
         tags: values.tags || [],
         updatedAt: serverTimestamp,
       }
@@ -127,7 +123,7 @@ export const useUpdateNoteMutation = (noteId: string) => {
 - メモが見つからない場合は「メモが見つかりません」を表示
 - FR-MEMO-001 で作成した `NoteForm` を `defaultValues` 付きで使用
 - `useUpdateNoteMutation` の `mutateAsync` を `onSubmit` に渡す
-- keywords は `string[]` → カンマ区切りテキストに変換してフォームに渡す
+- keywords は `string` のままフォームに渡す
 - ページタイトル「メモを編集」を表示
 - 「戻る」リンク（`/` へ）を配置
 
@@ -136,7 +132,7 @@ export const useUpdateNoteMutation = (noteId: string) => {
 const defaultValues: Partial<NoteFormValues> = {
   content: note.content,
   title: note.title,
-  keywords: note.keywords.join(', '),
+  keywords: note.keywords,
   tags: note.tags,
 }
 ```
