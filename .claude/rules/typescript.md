@@ -1,6 +1,6 @@
 ---
 name: typescript-implementation
-paths: src/**/*.ts, tests/**/*.test.ts
+paths: apps/**/*.ts, tests/**/*.test.ts
 description: TypeScriptで実装する際のルール。.tsxや.tsファイルの作成・編集、処理やロジックや関数の実装のリクエスト時に参照すること。「実装して」などのリクエストに対応する。
 ---
 

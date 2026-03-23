@@ -1,6 +1,6 @@
 ---
 name: react-implementation
-paths: src/**/*.{ts,tsx}
+paths: apps/**/*.{ts,tsx}
 description: React / Next.js / Tanstack Start + TypeScriptでコンポーネントやページを実装する際のルール。.tsxファイルの作成・編集、コンポーネント設計、フォーム実装、スタイリング、エラーハンドリング、画像最適化に関するリクエスト時に参照すること。「コンポーネントを作って」「ページを追加して」「フォームを実装して」「UIを修正して」などのリクエストに対応する。
 ---
 

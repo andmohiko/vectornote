@@ -1,6 +1,6 @@
 ---
 name: firestore-implementation
-paths: src/**/*.{ts,tsx}
+paths: apps/**/*.{ts,tsx}
 description: Firestoreを使用するReact + TypeScriptプロジェクトにおける実装パターンのスキル。エンティティの型定義（Entity / CreateDto / UpdateDto）、Firestore CRUD操作（Operations層）、Reactカスタムフック（Hooks層）の作成時に必ず参照すること。新しいエンティティの追加、Firestoreへのデータ読み書き、リアルタイム購読、ページネーション、ミューテーションフックの実装時にトリガーされる。「Firestoreの型を作って」「CRUDを実装して」「データ取得フックを作って」「新しいコレクションを追加して」などのリクエストに対応する。
 ---
 
