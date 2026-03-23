@@ -31,7 +31,7 @@ service cloud.firestore {
         && 'createdAt' in requestData && requestData.createdAt is timestamp
         && 'updatedAt' in requestData && requestData.updatedAt is timestamp
         && 'content' in requestData && requestData.content is string
-        && 'embedding' in requestData && (requestData.embedding is list || requestData.embedding == null)
+        && 'embedding' in requestData
         && 'ogp' in requestData && (requestData.ogp is map || requestData.ogp == null)
         && 'keywords' in requestData && requestData.keywords is string
         && 'tags' in requestData && requestData.tags is list
@@ -48,6 +48,10 @@ service cloud.firestore {
         allow create: if isSignedIn() && isUser(userId) && isValidNoteSchema(requestData());
         allow update: if isSignedIn() && isUser(userId) && isValidNoteSchema(requestData());
         allow delete: if isSignedIn() && isUser(userId);
+      }
+
+      match /tags/{tagId} {
+        allow read: if isSignedIn() && isUser(userId);
       }
     }
   }

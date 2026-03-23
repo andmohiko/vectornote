@@ -4,6 +4,7 @@
 
 - [users](#users)
   - [notes](#notes)
+  - [tags](#tags)
 
 ## users
 
@@ -35,3 +36,26 @@
 - tags: Array<String> メモのジャンル分け用のタグ
 - title: String メモのタイトル（任意）
 - updatedAt: Timestamp 更新日時
+
+## tags
+
+### 概要
+
+- ユーザーのタグ一覧コレクション
+- ID: タグのラベル名（例: `react`）
+- 親コレクションのユーザーのみがアクセス可能
+- クライアントからは read のみ。write は Firebase Functions のトリガーが行う
+
+## 詳細
+
+- count: Number タグがついているメモの件数
+- createdAt: Timestamp 作成日時
+- label: String タグ名
+- updatedAt: Timestamp 更新日時
+
+## 同期ルール
+
+- メモ作成時（onCreateNote）: タグが存在すれば `count` をインクリメント、なければドキュメントを新規作成
+- メモ更新時（onUpdateNote）: `before.tags` と `after.tags` の差分を計算し、追加タグをインクリメント・削除タグをデクリメント
+- メモ削除時（onDeleteNote）: 各タグの `count` をデクリメント、`count=0` になればドキュメントを削除
+- `count` の増減は `FieldValue.increment()` でアトミックに操作する
