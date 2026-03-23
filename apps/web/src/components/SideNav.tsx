@@ -26,9 +26,14 @@ export const SideNav = () => {
         <SidebarGroup>
           <SidebarGroupLabel>タグ</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="gap-1">
+            <SidebarMenu className="gap-2">
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={selectedTag === null} tooltip="すべて">
+                <SidebarMenuButton
+                  asChild
+                  isActive={selectedTag === null}
+                  tooltip="すべて"
+                  className="data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:hover:bg-primary/90"
+                >
                   <Link to="/" search={{}}>
                     <TagIcon />
                     <span>すべて</span>
@@ -48,6 +53,7 @@ export const SideNav = () => {
                         asChild
                         isActive={selectedTag === tag.label}
                         tooltip={tag.label}
+                        className="data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:hover:bg-primary/90"
                       >
                         <Link to="/" search={{ tag: tag.label }}>
                           <TagIcon />
