@@ -37,6 +37,7 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
               </DialogHeader>
               <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
               <NoteForm
+                expandContent
                 onSubmit={handleSubmit}
                 defaultValues={{
                   content: note.content,
