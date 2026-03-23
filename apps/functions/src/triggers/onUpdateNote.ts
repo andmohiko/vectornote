@@ -20,11 +20,12 @@ export const onUpdateNote = onDocumentUpdated(
     const { uid, noteId } = event.params
 
     // content が変更された場合のみ OGP を再取得（ogp書き戻しによる再トリガー防止）
+    let ogp = after.ogp ?? null
     if (before.content !== after.content) {
       const url = extractFirstUrl(after.content)
 
       try {
-        const ogp = url ? await fetchOgp(url) : null
+        ogp = url ? await fetchOgp(url) : null
         const dto: UpdateNoteDtoFromAdmin = { ogp, updatedAt: serverTimestamp }
         await updateNoteOperation(uid, noteId, dto)
       } catch (error) {
@@ -47,6 +48,8 @@ export const onUpdateNote = onDocumentUpdated(
       after.content,
       after.keywords,
       after.tags,
+      ogp?.title,
+      ogp?.description,
     )
     if (!embeddingText.trim()) return
 

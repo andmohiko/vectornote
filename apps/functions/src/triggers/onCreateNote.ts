@@ -18,10 +18,11 @@ export const onCreateNote = onDocumentCreated(
     const { title, content, keywords, tags } = event.data.data()
 
     // OGP取得
+    let ogp = null
     const url = extractFirstUrl(content)
     if (url) {
       try {
-        const ogp = await fetchOgp(url)
+        ogp = await fetchOgp(url)
         const dto: UpdateNoteDtoFromAdmin = { ogp, updatedAt: serverTimestamp }
         await updateNoteOperation(uid, noteId, dto)
       } catch (error) {
@@ -29,8 +30,8 @@ export const onCreateNote = onDocumentCreated(
       }
     }
 
-    // embedding生成
-    const embeddingText = buildEmbeddingText(title, content, keywords, tags)
+    // embedding生成（OGPのtitle/descriptionも含める）
+    const embeddingText = buildEmbeddingText(title, content, keywords, tags, ogp?.title, ogp?.description)
     if (!embeddingText.trim()) return
 
     try {

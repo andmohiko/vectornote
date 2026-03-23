@@ -4,7 +4,9 @@ export const buildEmbeddingText = (
   content: string,
   keywords: string,
   tags: string[],
+  ogpTitle?: string | null,
+  ogpDescription?: string | null,
 ): string =>
-  [title || '', content || '', keywords || '', ...(tags || [])]
+  [title || '', content || '', keywords || '', ...(tags || []), ogpTitle || '', ogpDescription || '']
     .filter(Boolean)
     .join(' ')
