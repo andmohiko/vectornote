@@ -6,7 +6,8 @@
       "Bash(npx tsc:*)",
       "Bash(npx -w apps/web tsc --noEmit)",
       "Bash(ls node_modules/.bin/tsc*)",
-      "Bash(./node_modules/.bin/tsc --noEmit)"
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(pnpm --filter web build)"
     ],
     "deny": [],
     "ask": []

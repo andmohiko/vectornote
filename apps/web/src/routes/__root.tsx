@@ -8,10 +8,11 @@ import {
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import Footer from '@/components/Footer'
 import Header from '@/components/Header'
+import { Toaster } from '@/components/ui/sonner'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import TanStackQueryProvider from '../integrations/tanstack-query/root-provider'
+import { useLocation } from '@tanstack/react-router'
 import { Providers } from '../providers'
-import { useFirebaseAuthContext } from '../providers/FirebaseAuthProvider'
 import appCss from '../styles.css?url'
 
 interface MyRouterContext {
@@ -45,7 +46,8 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 })
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthPath } = useFirebaseAuthContext()
+  const location = useLocation()
+  const isAuthPath = location.pathname === '/login'
 
   if (isAuthPath) {
     return <>{children}</>
@@ -90,6 +92,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             />
           )}
         </TanStackQueryProvider>
+        <Toaster />
         <Scripts />
       </body>
     </html>

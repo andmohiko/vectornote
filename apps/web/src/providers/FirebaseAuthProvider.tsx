@@ -1,3 +1,4 @@
+import type { FirebaseError } from 'firebase/app'
 import type { User } from 'firebase/auth'
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'
 import type { ReactNode } from 'react'
@@ -7,25 +8,28 @@ import {
   useContext,
   useEffect,
   useState,
-  useMemo,
 } from 'react'
-import { useLocation, useNavigate } from '@tanstack/react-router'
+import { toast } from 'sonner'
+
+import { useNavigate } from '@tanstack/react-router'
 
 import { auth } from '@/lib/firebase'
+import { getContext } from '@/integrations/tanstack-query/root-provider'
 import { Loader2Icon } from 'lucide-react'
+
+const SESSION_LOGIN_AT_KEY = 'auth_login_at'
+const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000 // 30日
 
 const FirebaseAuthContext = createContext<{
   currentUser: User | null | undefined
   uid: string | null | undefined
   login: () => void
   logout: () => Promise<void>
-  isAuthPath: boolean
 }>({
   currentUser: undefined,
   uid: undefined,
   login: async () => {},
   logout: async () => {},
-  isAuthPath: false,
 })
 
 const FirebaseAuthProvider = ({
@@ -38,11 +42,6 @@ const FirebaseAuthProvider = ({
   )
   const [uid, setUid] = useState<string | null | undefined>(undefined)
   const navigate = useNavigate()
-  const location = useLocation()
-  const isAuthPath = useMemo(
-    () => location.pathname === '/login',
-    [location.pathname],
-  )
 
   const LoadingCover = () => {
     return (
@@ -53,47 +52,60 @@ const FirebaseAuthProvider = ({
   }
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
+        // 30日セッション有効期限チェック
+        const loginAt = localStorage.getItem(SESSION_LOGIN_AT_KEY)
+        if (loginAt) {
+          const elapsed = Date.now() - Number(loginAt)
+          if (elapsed > SESSION_MAX_AGE_MS) {
+            await signOut(auth)
+            localStorage.removeItem(SESSION_LOGIN_AT_KEY)
+            setCurrentUser(null)
+            setUid(null)
+            navigate({ to: '/login' })
+            return
+          }
+        }
         setCurrentUser(user)
         setUid(user.uid)
+        navigate({ to: '/' })
       } else {
         setCurrentUser(null)
         setUid(null)
+        navigate({ to: '/login' })
       }
     })
     return () => unsubscribe()
-  }, [])
-
-  useEffect(() => {
-    if (currentUser === undefined) return
-    if (currentUser === null && !isAuthPath) {
-      navigate({ to: '/login' })
-    }
-    if (currentUser && isAuthPath) {
-      navigate({ to: '/' })
-    }
-  }, [currentUser, isAuthPath, navigate])
+  }, [navigate])
 
   const login = useCallback(async () => {
     const googleProvider = new GoogleAuthProvider()
     signInWithPopup(auth, googleProvider)
-      .then(async (val) => {
-        const userData = val.user
-        console.log('login success', userData)
+      .then(() => {
+        // ログイン成功時にログイン日時を記録
+        localStorage.setItem(SESSION_LOGIN_AT_KEY, String(Date.now()))
       })
-      .catch((error) => {
+      .catch((error: FirebaseError) => {
+        // ポップアップを閉じた場合はエラー表示しない
+        if (error.code === 'auth/popup-closed-by-user') {
+          return
+        }
+        toast.error('ログインに失敗しました')
         console.error('error with google login', error)
       })
   }, [])
 
   const logout = useCallback(async () => {
     await signOut(auth)
+    localStorage.removeItem(SESSION_LOGIN_AT_KEY)
+    const { queryClient } = getContext()
+    queryClient.clear()
   }, [])
 
   return (
     <FirebaseAuthContext.Provider
-      value={{ currentUser, uid, login, logout, isAuthPath }}
+      value={{ currentUser, uid, login, logout }}
     >
       {currentUser === undefined ? <LoadingCover /> : null}
       {children}

@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { useFirebaseAuthContext } from '@/providers/FirebaseAuthProvider'
 
-export const Route = createFileRoute('/')({ component: App })
+export const Route = createFileRoute('/_authed/')({ component: App })
 
 function App() {
   const { logout } = useFirebaseAuthContext()

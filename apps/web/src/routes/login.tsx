@@ -1,9 +1,18 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
+import { auth } from '@/lib/firebase'
 import { useFirebaseAuthContext } from '@/providers/FirebaseAuthProvider'
 import { Button } from '@/components/ui/button'
 
-export const Route = createFileRoute('/login')({ component: LoginPage })
+export const Route = createFileRoute('/login')({
+  beforeLoad: async () => {
+    await auth.authStateReady()
+    if (auth.currentUser) {
+      throw redirect({ to: '/' })
+    }
+  },
+  component: LoginPage,
+})
 
 function LoginPage() {
   const { login } = useFirebaseAuthContext()

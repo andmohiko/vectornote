@@ -10,63 +10,73 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as AboutRouteImport } from './routes/about'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
+import { Route as AuthedRouteImport } from './routes/_authed'
+import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
+import { Route as AuthedAboutRouteImport } from './routes/_authed/about'
+import { Route as AuthedDemoTanstackQueryRouteImport } from './routes/_authed/demo/tanstack-query'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
+const AuthedRoute = AuthedRouteImport.update({
+  id: '/_authed',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const AuthedIndexRoute = AuthedIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthedRoute,
 } as any)
-const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
+const AuthedAboutRoute = AuthedAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedDemoTanstackQueryRoute = AuthedDemoTanstackQueryRouteImport.update({
   id: '/demo/tanstack-query',
   path: '/demo/tanstack-query',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthedRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/about': typeof AboutRoute
+  '/': typeof AuthedIndexRoute
   '/login': typeof LoginRoute
-  '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/about': typeof AuthedAboutRoute
+  '/demo/tanstack-query': typeof AuthedDemoTanstackQueryRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/about': typeof AboutRoute
   '/login': typeof LoginRoute
-  '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/about': typeof AuthedAboutRoute
+  '/': typeof AuthedIndexRoute
+  '/demo/tanstack-query': typeof AuthedDemoTanstackQueryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/about': typeof AboutRoute
+  '/_authed': typeof AuthedRouteWithChildren
   '/login': typeof LoginRoute
-  '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/_authed/about': typeof AuthedAboutRoute
+  '/_authed/': typeof AuthedIndexRoute
+  '/_authed/demo/tanstack-query': typeof AuthedDemoTanstackQueryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/login' | '/demo/tanstack-query'
+  fullPaths: '/' | '/login' | '/about' | '/demo/tanstack-query'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/login' | '/demo/tanstack-query'
-  id: '__root__' | '/' | '/about' | '/login' | '/demo/tanstack-query'
+  to: '/login' | '/about' | '/' | '/demo/tanstack-query'
+  id:
+    | '__root__'
+    | '/_authed'
+    | '/login'
+    | '/_authed/about'
+    | '/_authed/'
+    | '/_authed/demo/tanstack-query'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AboutRoute: typeof AboutRoute
+  AuthedRoute: typeof AuthedRouteWithChildren
   LoginRoute: typeof LoginRoute
-  DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -78,35 +88,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
+    '/_authed': {
+      id: '/_authed'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
+    '/_authed/': {
+      id: '/_authed/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthedIndexRouteImport
+      parentRoute: typeof AuthedRoute
     }
-    '/demo/tanstack-query': {
-      id: '/demo/tanstack-query'
+    '/_authed/about': {
+      id: '/_authed/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AuthedAboutRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/demo/tanstack-query': {
+      id: '/_authed/demo/tanstack-query'
       path: '/demo/tanstack-query'
       fullPath: '/demo/tanstack-query'
-      preLoaderRoute: typeof DemoTanstackQueryRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AuthedDemoTanstackQueryRouteImport
+      parentRoute: typeof AuthedRoute
     }
   }
 }
 
+interface AuthedRouteChildren {
+  AuthedAboutRoute: typeof AuthedAboutRoute
+  AuthedIndexRoute: typeof AuthedIndexRoute
+  AuthedDemoTanstackQueryRoute: typeof AuthedDemoTanstackQueryRoute
+}
+
+const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedAboutRoute: AuthedAboutRoute,
+  AuthedIndexRoute: AuthedIndexRoute,
+  AuthedDemoTanstackQueryRoute: AuthedDemoTanstackQueryRoute,
+}
+
+const AuthedRouteWithChildren =
+  AuthedRoute._addFileChildren(AuthedRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AboutRoute: AboutRoute,
+  AuthedRoute: AuthedRouteWithChildren,
   LoginRoute: LoginRoute,
-  DemoTanstackQueryRoute: DemoTanstackQueryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
