@@ -3,6 +3,32 @@ import dayjs from 'dayjs'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 
+const URL_REGEX = /https?:\/\/[^\s]+/g
+
+const renderContentWithLinks = (text: string) => {
+  const parts = text.split(URL_REGEX)
+  const matches = text.match(URL_REGEX) ?? []
+
+  return parts.flatMap((part, i) => {
+    if (i < matches.length) {
+      return [
+        part,
+        <a
+          key={i}
+          href={matches[i]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {matches[i]}
+        </a>,
+      ]
+    }
+    return [part]
+  })
+}
+
 type NoteCardProps = {
   note: Note
   onClick: (note: Note) => void
@@ -24,7 +50,7 @@ export const NoteCard = ({ note, onClick }: NoteCardProps) => {
               {note.title}
             </p>
           )}
-          <p className="line-clamp-10 whitespace-pre-line text-sm text-foreground">{note.content}</p>
+          <p className="line-clamp-10 whitespace-pre-line text-sm text-foreground">{renderContentWithLinks(note.content)}</p>
         </CardHeader>
         <CardContent className="flex-1">
           {note.tags.length > 0 && (
