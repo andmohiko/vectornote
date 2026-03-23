@@ -22,9 +22,9 @@ const hasAlreadyTriggered = (
 export const triggerOnce =
   <T, P extends Record<string, string>>(
     suffix: string,
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation> eventの型は不明のため
     handler: (event: FirestoreEvent<T, P>) => PromiseLike<any> | any,
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation> eventの型は不明のため
   ): ((event: FirestoreEvent<T, P>) => PromiseLike<any> | any) =>
   async (event) => {
     if (await hasAlreadyTriggered(event.id, suffix)) {
