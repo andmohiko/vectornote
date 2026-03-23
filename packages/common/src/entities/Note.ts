@@ -1,4 +1,5 @@
 import type { FieldValue, VectorValue } from 'firebase/firestore'
+import type { FieldValue as AdminFieldValue } from 'firebase-admin/firestore'
 
 /** コレクション名 */
 export const noteCollection = 'notes' as const
@@ -28,10 +29,7 @@ export type Note = {
 }
 
 /** 作成用DTO */
-export type CreateNoteDto = Omit<
-  Note,
-  'noteId' | 'createdAt' | 'updatedAt'
-> & {
+export type CreateNoteDto = Omit<Note, 'noteId' | 'createdAt' | 'updatedAt'> & {
   createdAt: FieldValue
   updatedAt: FieldValue
 }
@@ -44,4 +42,11 @@ export type UpdateNoteDto = {
   tags?: Note['tags']
   title?: Note['title']
   updatedAt: FieldValue
+}
+
+/** firebase-admin を使用した更新用DTO */
+export type UpdateNoteDtoFromAdmin = {
+  embedding?: AdminFieldValue
+  ogp?: Note['ogp']
+  updatedAt: AdminFieldValue
 }
