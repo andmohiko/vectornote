@@ -21,6 +21,7 @@ type NoteFormProps = {
   resetOnSuccess?: boolean
   footerLeft?: React.ReactNode
   expandContent?: boolean
+  autoFocusContent?: boolean
 }
 
 export const NoteForm = ({
@@ -31,6 +32,7 @@ export const NoteForm = ({
   resetOnSuccess = false,
   footerLeft,
   expandContent = false,
+  autoFocusContent = false,
 }: NoteFormProps) => {
   const {
     register,
@@ -110,6 +112,7 @@ export const NoteForm = ({
           id="content"
           placeholder="メモの内容を入力..."
           className={expandContent ? 'h-full min-h-0 resize-none break-all' : 'min-h-[12rem] break-all'}
+          autoFocus={autoFocusContent}
           {...register('content')}
         />
         {errors.content && (
