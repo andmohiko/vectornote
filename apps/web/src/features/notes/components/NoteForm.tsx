@@ -10,10 +10,11 @@ import type { NoteFormValues } from '../schemas/noteSchema'
 import { noteFormSchema } from '../schemas/noteSchema'
 
 type NoteFormProps = {
-  onSubmit: (values: NoteFormValues) => void
+  onSubmit: (values: NoteFormValues) => void | Promise<void>
   defaultValues?: Partial<NoteFormValues>
   submitLabel?: string
   isPending?: boolean
+  resetOnSuccess?: boolean
 }
 
 export const NoteForm = ({
@@ -21,10 +22,12 @@ export const NoteForm = ({
   defaultValues,
   submitLabel = '保存',
   isPending = false,
+  resetOnSuccess = false,
 }: NoteFormProps) => {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<NoteFormValues>({
     resolver: zodResolver(noteFormSchema),
@@ -38,8 +41,13 @@ export const NoteForm = ({
     },
   })
 
+  const handleSubmitWithReset = async (values: NoteFormValues) => {
+    await onSubmit(values)
+    if (resetOnSuccess) reset()
+  }
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleSubmitWithReset)} className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="title">タイトル</Label>
         <Input
