@@ -1,3 +1,4 @@
+import type React from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 
@@ -15,6 +16,7 @@ type NoteFormProps = {
   submitLabel?: string
   isPending?: boolean
   resetOnSuccess?: boolean
+  footerLeft?: React.ReactNode
 }
 
 export const NoteForm = ({
@@ -23,6 +25,7 @@ export const NoteForm = ({
   submitLabel = '保存',
   isPending = false,
   resetOnSuccess = false,
+  footerLeft,
 }: NoteFormProps) => {
   const {
     register,
@@ -85,7 +88,8 @@ export const NoteForm = ({
         )}
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <div>{footerLeft}</div>
         <Button type="submit" disabled={isPending}>
           {isPending && <Spinner className="mr-2" />}
           {submitLabel}

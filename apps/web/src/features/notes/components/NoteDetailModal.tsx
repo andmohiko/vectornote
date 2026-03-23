@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import type { Note } from '@vectornote/common'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -7,6 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { useUpdateNoteMutation } from '../hooks/useUpdateNoteMutation'
 import type { NoteFormValues } from '../schemas/noteSchema'
+import { DeleteNoteDialog } from './DeleteNoteDialog'
 import { NoteForm } from './NoteForm'
 
 type NoteDetailModalProps = {
@@ -16,6 +19,7 @@ type NoteDetailModalProps = {
 
 export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
   const { mutateAsync, isPending } = useUpdateNoteMutation(note?.noteId ?? '')
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   const handleSubmit = async (values: NoteFormValues) => {
     await mutateAsync(values)
@@ -23,27 +27,48 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
   }
 
   return (
-    <Dialog open={!!note} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-        {note && (
-          <>
-            <DialogHeader>
-              <DialogTitle>メモを編集</DialogTitle>
-            </DialogHeader>
-            <NoteForm
-              onSubmit={handleSubmit}
-              defaultValues={{
-                content: note.content,
-                title: note.title ?? '',
-                keywords: note.keywords ?? '',
-                tags: note.tags,
-              }}
-              submitLabel="更新"
-              isPending={isPending}
-            />
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={!!note} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+          {note && (
+            <>
+              <DialogHeader>
+                <DialogTitle>メモを編集</DialogTitle>
+              </DialogHeader>
+              <NoteForm
+                onSubmit={handleSubmit}
+                defaultValues={{
+                  content: note.content,
+                  title: note.title ?? '',
+                  keywords: note.keywords ?? '',
+                  tags: note.tags,
+                }}
+                submitLabel="更新"
+                isPending={isPending}
+                footerLeft={
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="border-transparent bg-red-600 text-white hover:bg-red-700 hover:text-white"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    削除
+                  </Button>
+                }
+              />
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {note && (
+        <DeleteNoteDialog
+          noteId={note.noteId}
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onDeleted={onClose}
+        />
+      )}
+    </>
   )
 }
