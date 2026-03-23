@@ -29,12 +29,13 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
   return (
     <>
       <Dialog open={!!note} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+        <DialogContent className="flex h-full max-h-[700px] w-full max-w-[800px] flex-col overflow-hidden sm:max-w-[800px]">
           {note && (
             <>
-              <DialogHeader>
+              <DialogHeader className="shrink-0">
                 <DialogTitle>メモを編集</DialogTitle>
               </DialogHeader>
+              <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
               <NoteForm
                 onSubmit={handleSubmit}
                 defaultValues={{
@@ -56,6 +57,7 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
                   </Button>
                 }
               />
+              </div>
             </>
           )}
         </DialogContent>

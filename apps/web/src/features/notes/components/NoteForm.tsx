@@ -50,7 +50,7 @@ export const NoteForm = ({
   }
 
   return (
-    <form onSubmit={handleSubmit(handleSubmitWithReset)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleSubmitWithReset)} className="flex h-full flex-col gap-6">
       <div className="space-y-2">
         <Label htmlFor="title">タイトル</Label>
         <Input
@@ -63,12 +63,12 @@ export const NoteForm = ({
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="flex min-h-0 flex-1 flex-col space-y-2">
         <Label htmlFor="content">本文</Label>
         <Textarea
           id="content"
           placeholder="メモの内容を入力..."
-          rows={10}
+          className="h-full min-h-0 resize-none break-all"
           {...register('content')}
         />
         {errors.content && (
