@@ -1,7 +1,7 @@
 import type { Analytics } from 'firebase/analytics'
 import { getAnalytics, isSupported } from 'firebase/analytics'
 import { initializeApp } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
+import { browserLocalPersistence, getAuth, setPersistence } from 'firebase/auth'
 import {
   connectFirestoreEmulator,
   getFirestore,
@@ -25,6 +25,7 @@ const firebaseApp = initializeApp({ ...config })
 
 const auth = getAuth(firebaseApp)
 auth.languageCode = 'ja'
+setPersistence(auth, browserLocalPersistence)
 
 const db = getFirestore(firebaseApp)
 const serverTimestamp = getServerTimeStamp()
