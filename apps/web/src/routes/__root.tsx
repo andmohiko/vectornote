@@ -32,7 +32,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
+        title: 'Vector Memo',
+      },
+      {
+        name: 'description',
+        content: 'セマンティック検索メモ帳アプリケーション',
       },
     ],
     links: [
@@ -64,7 +68,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="ja" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <HeadContent />
