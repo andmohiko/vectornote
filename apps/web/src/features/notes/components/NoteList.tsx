@@ -1,10 +1,12 @@
 import { Link } from '@tanstack/react-router'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { Note } from '@vectornote/common'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
 import { useNotes } from '../hooks/useNotes'
 import { NoteCard } from './NoteCard'
+import { NoteDetailModal } from './NoteDetailModal'
 
 export const NoteList = () => {
   const {
@@ -17,6 +19,7 @@ export const NoteList = () => {
     refetch,
   } = useNotes()
 
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null)
   const observerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -73,15 +76,21 @@ export const NoteList = () => {
   }
 
   return (
-    <div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {notes.map((note) => (
-          <NoteCard key={note.noteId} note={note} />
-        ))}
+    <>
+      <div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {notes.map((note) => (
+            <NoteCard key={note.noteId} note={note} onClick={setSelectedNote} />
+          ))}
+        </div>
+        <div ref={observerRef} className="mt-8 flex justify-center">
+          {isFetchingNextPage && <Spinner className="size-6" />}
+        </div>
       </div>
-      <div ref={observerRef} className="mt-8 flex justify-center">
-        {isFetchingNextPage && <Spinner className="size-6" />}
-      </div>
-    </div>
+      <NoteDetailModal
+        note={selectedNote}
+        onClose={() => setSelectedNote(null)}
+      />
+    </>
   )
 }

@@ -5,8 +5,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import type { NoteFormValues } from '../schemas/noteSchema'
 import { useUpdateNoteMutation } from '../hooks/useUpdateNoteMutation'
+import type { NoteFormValues } from '../schemas/noteSchema'
 import { NoteForm } from './NoteForm'
 
 type NoteDetailModalProps = {
