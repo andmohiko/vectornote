@@ -259,19 +259,17 @@
 firestore/
 ├── users/
 │   └── {uid}/
-│       ├── email: string
-│       ├── displayName: string
-│       ├── photoURL: string | null
 │       ├── createdAt: Timestamp
-│       ├── settings: object
-│       └── memos/  (サブコレクション)
-│           └── {memoId}/
-│               ├── title: string | null
-│               ├── content: string
-│               ├── keywords: string | null
-│               ├── tags: string[]
-│               ├── embedding: vector(1536)
+│       ├── email: string
+│       ├── updatedAt: Timestamp
+│       └── notes/  (サブコレクション)
+│           └── {noteId}/
 │               ├── createdAt: Timestamp
+│               ├── content: string
+│               ├── embedding: vector(1536)
+│               ├── keywords: string[]
+│               ├── tags: string[]
+│               ├── title: string
 │               └── updatedAt: Timestamp
 ```
 
@@ -280,23 +278,21 @@ firestore/
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
 | uid | string | Firebase Auth UID（ドキュメントID） |
-| email | string | メールアドレス |
-| displayName | string | 表示名 |
-| photoURL | string \| null | プロフィール画像URL |
-| createdAt | Timestamp | アカウント作成日時 |
-| settings | object | ユーザー設定（テーマ等） |
+| createdAt | Timestamp | 作成日時 |
+| email | string | 認証に使用したメールアドレス |
+| updatedAt | Timestamp | 更新日時 |
 
-### 4.3 memos サブコレクション
+### 4.3 notes サブコレクション
 
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
 | id | string | 自動生成ID（ドキュメントID） |
-| title | string \| null | タイトル（任意） |
-| content | string | 本文（必須） |
-| keywords | string \| null | 関連キーワード（任意） |
-| tags | string[] | タグ配列 |
-| embedding | vector(1536) | ベクトル埋め込み |
 | createdAt | Timestamp | 作成日時 |
+| content | string | メモの本文（必須） |
+| embedding | vector(1536) | ベクトル埋め込み |
+| keywords | string[] | 検索時のキーワード |
+| tags | string[] | メモのジャンル分け用のタグ |
+| title | string | メモのタイトル（任意） |
 | updatedAt | Timestamp | 更新日時 |
 
 ### 4.4 Firestoreインデックス設定
@@ -307,7 +303,7 @@ firestore/
 {
   "indexes": [
     {
-      "collectionGroup": "memos",
+      "collectionGroup": "notes",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "updatedAt", "order": "DESCENDING" }
@@ -316,7 +312,7 @@ firestore/
   ],
   "fieldOverrides": [
     {
-      "collectionGroup": "memos",
+      "collectionGroup": "notes",
       "fieldPath": "embedding",
       "indexes": [
         {
@@ -335,43 +331,37 @@ firestore/
 ### 4.5 TypeScript型定義
 
 ```typescript
-// types/memo.ts
+// types/note.ts
 import { Timestamp } from 'firebase/firestore';
 
-export interface Memo {
+export interface Note {
   id: string;
-  title: string | null;
-  content: string;
-  keywords: string | null;
-  tags: string[];
-  embedding: number[];
   createdAt: Timestamp;
+  content: string;
+  embedding: number[];
+  keywords: string[];
+  tags: string[];
+  title: string;
   updatedAt: Timestamp;
 }
 
-export interface MemoInput {
-  title?: string | null;
+export interface NoteInput {
   content: string;
-  keywords?: string | null;
+  title?: string;
+  keywords?: string[];
   tags?: string[];
 }
 
 export interface SearchResult {
-  memo: Memo;
+  note: Note;
   similarity: number;
 }
 
 export interface User {
   uid: string;
-  email: string;
-  displayName: string;
-  photoURL: string | null;
   createdAt: Timestamp;
-  settings: UserSettings;
-}
-
-export interface UserSettings {
-  theme: 'light' | 'dark' | 'system';
+  email: string;
+  updatedAt: Timestamp;
 }
 ```
 
@@ -386,7 +376,7 @@ export interface UserSettings {
 | SCR-001 | ログイン画面 | `/login` | 不要 | Googleログインボタンを表示 |
 | SCR-002 | メモ一覧画面 | `/` | 必要 | 最新メモを一覧表示（ホーム） |
 | SCR-003 | メモ作成画面 | `/new` | 必要 | 新規メモ入力フォーム |
-| SCR-004 | メモ詳細画面 | `/memo/$memoId` | 必要 | メモの詳細表示と編集 |
+| SCR-004 | メモ詳細画面 | `/note/$noteId` | 必要 | メモの詳細表示と編集 |
 | SCR-005 | 検索結果画面 | `/search?q=xxx` | 必要 | セマンティック検索の結果表示 |
 | SCR-006 | 設定画面 | `/settings` | 必要 | ユーザー設定 |
 
@@ -566,17 +556,17 @@ interface GenerateEmbeddingResponse {
 2. テキストをOpenAI APIに送信
 3. 生成されたベクトルを返却
 
-#### searchMemos
+#### searchNotes
 
 | 項目 | 内容 |
 |------|------|
-| 関数名 | `searchMemos` |
+| 関数名 | `searchNotes` |
 | タイプ | onCall (v2) |
 | 認証 | Firebase Auth必須 |
 
 **リクエスト:**
 ```typescript
-interface SearchMemosRequest {
+interface SearchNotesRequest {
   query: string;       // 検索クエリ
   limit?: number;      // 最大件数（デフォルト: 10）
   tags?: string[];     // タグフィルタ
@@ -586,9 +576,9 @@ interface SearchMemosRequest {
 
 **レスポンス:**
 ```typescript
-interface SearchMemosResponse {
+interface SearchNotesResponse {
   results: Array<{
-    memo: Memo;
+    note: Note;
     similarity: number;
   }>;
 }
@@ -597,7 +587,7 @@ interface SearchMemosResponse {
 **処理内容:**
 1. 認証トークンを検証
 2. クエリをベクトル化
-3. Firestore Vector Searchで類似メモを検索
+3. Firestore Vector Searchで類似ノートを検索
 4. 結果を類似度でソートして返却
 
 ### 6.3 クライアントサイドAPI（Firestore直接アクセス）
@@ -606,11 +596,11 @@ TanStack Queryを使用してFirestoreに直接アクセスする操作:
 
 | 操作 | Query Key | 説明 |
 |------|-----------|------|
-| メモ一覧取得 | `['memos', uid]` | ページネーション付き |
-| メモ詳細取得 | `['memo', memoId]` | 単一メモ |
-| メモ作成 | mutation | invalidate: `['memos']` |
-| メモ更新 | mutation | invalidate: `['memos']`, `['memo', id]` |
-| メモ削除 | mutation | invalidate: `['memos']` |
+| メモ一覧取得 | `['notes', uid]` | ページネーション付き |
+| メモ詳細取得 | `['note', noteId]` | 単一メモ |
+| メモ作成 | mutation | invalidate: `['notes']` |
+| メモ更新 | mutation | invalidate: `['notes']`, `['note', id]` |
+| メモ削除 | mutation | invalidate: `['notes']` |
 
 ---
 
@@ -660,23 +650,23 @@ vector-memo/
 │   │   ├── index.tsx           # / (メモ一覧)
 │   │   ├── login.tsx           # /login
 │   │   ├── new.tsx             # /new (メモ作成)
-│   │   ├── memo.$memoId.tsx    # /memo/:memoId (詳細)
+│   │   ├── note.$noteId.tsx     # /note/:noteId (詳細)
 │   │   ├── search.tsx          # /search
 │   │   └── settings.tsx        # /settings
 │   ├── components/
 │   │   ├── ui/                 # 汎用UIコンポーネント
-│   │   ├── memo/               # メモ関連コンポーネント
+│   │   ├── note/                # メモ関連コンポーネント
 │   │   └── layout/             # レイアウトコンポーネント
 │   ├── hooks/
 │   │   ├── useAuth.ts
-│   │   ├── useMemos.ts
+│   │   ├── useNotes.ts
 │   │   └── useSearch.ts
 │   ├── lib/
 │   │   ├── firebase.ts         # Firebase初期化
 │   │   ├── firestore.ts        # Firestore操作
 │   │   └── functions.ts        # Firebase Functions呼び出し
 │   ├── types/
-│   │   └── memo.ts
+│   │   └── note.ts
 │   ├── router.tsx
 │   ├── routeTree.gen.ts        # 自動生成
 │   └── client.tsx
@@ -684,7 +674,7 @@ vector-memo/
 │   ├── src/
 │   │   ├── index.ts
 │   │   ├── generateEmbedding.ts
-│   │   └── searchMemos.ts
+│   │   └── searchNotes.ts
 │   └── package.json
 ├── public/
 ├── firestore.rules
@@ -711,7 +701,7 @@ service cloud.firestore {
                          && request.auth.uid == userId;
       
       // メモサブコレクション
-      match /memos/{memoId} {
+      match /notes/{noteId} {
         allow read, write: if request.auth != null 
                            && request.auth.uid == userId;
         
@@ -747,14 +737,14 @@ firebase functions:secrets:set OPENAI_API_KEY
 ```typescript
 import { z } from 'zod';
 
-export const memoSchema = z.object({
-  title: z.string().max(100).nullable().optional(),
+export const noteSchema = z.object({
   content: z.string().min(1).max(10000),
-  keywords: z.string().max(500).nullable().optional(),
+  title: z.string().max(100).optional(),
+  keywords: z.array(z.string()).optional(),
   tags: z.array(z.string().max(50)).max(10).optional(),
 });
 
-export type MemoInput = z.infer<typeof memoSchema>;
+export type NoteInput = z.infer<typeof noteSchema>;
 ```
 
 **サーバーサイド（Firebase Functions）:**
@@ -783,6 +773,9 @@ export type MemoInput = z.infer<typeof memoSchema>;
 | 高 | Notion連携 | Notionページの同期 |
 | 中 | 自動タグ付け | GPTによるタグ自動生成 |
 | 中 | マルチモーダル | 画像のベクトル検索対応 |
+| 低 | マークダウン対応 | 本文のMarkdown記法での入力・プレビュー表示 |
+| 低 | URLスクレイピング | 本文にURLが含まれる場合、リンク先の内容を取得して保存 |
+| 低 | ツイート保存 | ツイートURLの場合、本文テキストと画像を取得して保存 |
 | 低 | チーム共有 | メモの共有・コラボレーション |
 | 低 | モバイルアプリ | React Native版 |
 
@@ -842,6 +835,7 @@ firebase functions:secrets:set OPENAI_API_KEY
 | 日付 | バージョン | 変更内容 | 担当者 |
 |------|-----------|---------|--------|
 | 2026-03-21 | 1.0 | 初版作成 | - |
+| 2026-03-23 | 1.1 | firestore-design.mdに基づきデータモデルを更新（memos→notes、usersフィールド整理、keywords型変更） | - |
 
 ---
 
