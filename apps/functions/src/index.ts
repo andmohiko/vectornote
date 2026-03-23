@@ -7,6 +7,7 @@ process.env.TZ = timezone
 
 // triggers
 export { onCreateNote } from './triggers/onCreateNote'
+export { onDeleteNote } from './triggers/onDeleteNote'
 export { onUpdateNote } from './triggers/onUpdateNote'
 
 // API
