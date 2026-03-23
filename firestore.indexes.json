@@ -4,23 +4,22 @@
       "collectionGroup": "notes",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "__name__", "order": "ASCENDING" },
+        {
+          "fieldPath": "embedding",
+          "vectorConfig": { "dimension": 1536, "flat": {} }
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "notes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "tags", "arrayConfig": "CONTAINS" },
         { "fieldPath": "updatedAt", "order": "DESCENDING" }
       ]
     }
   ],
-  "fieldOverrides": [
-    {
-      "collectionGroup": "notes",
-      "fieldPath": "embedding",
-      "indexes": [
-        {
-          "queryScope": "COLLECTION",
-          "vectorConfig": {
-            "dimension": 1536,
-            "flat": {}
-          }
-        }
-      ]
-    }
-  ]
+  "fieldOverrides": []
 }
