@@ -1,4 +1,3 @@
-import { Link } from '@tanstack/react-router'
 import type { Note } from '@vectornote/common'
 import dayjs from 'dayjs'
 import { Badge } from '@/components/ui/badge'
@@ -6,15 +5,17 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 
 type NoteCardProps = {
   note: Note
+  onClick: (note: Note) => void
 }
 
-export const NoteCard = ({ note }: NoteCardProps) => {
+export const NoteCard = ({ note, onClick }: NoteCardProps) => {
   const updatedAt = dayjs(note.updatedAt).format('YYYY.MM.DD HH:mm')
 
   return (
-    <Link
-      to={'/note/$noteId' as never}
-      params={{ noteId: note.noteId } as never}
+    <button
+      type="button"
+      className="h-full w-full text-left"
+      onClick={() => onClick(note)}
     >
       <Card className="h-full transition-colors hover:bg-muted/50">
         <CardHeader>
@@ -23,7 +24,7 @@ export const NoteCard = ({ note }: NoteCardProps) => {
               {note.title}
             </p>
           )}
-          <p className="line-clamp-3 text-sm text-foreground">{note.content}</p>
+          <p className="line-clamp-10 whitespace-pre-line text-sm text-foreground">{note.content}</p>
         </CardHeader>
         <CardContent className="flex-1">
           {note.tags.length > 0 && (
@@ -45,6 +46,6 @@ export const NoteCard = ({ note }: NoteCardProps) => {
           )}
         </CardFooter>
       </Card>
-    </Link>
+    </button>
   )
 }
