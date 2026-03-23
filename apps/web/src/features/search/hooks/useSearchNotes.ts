@@ -10,7 +10,12 @@ export const useSearchNotes = (query: string) => {
 
   return useQuery({
     queryKey: searchNotesQueryKey(query),
-    queryFn: () => searchNotesApi({ query }),
+    queryFn: () =>
+      searchNotesApi({
+        query,
+        limit: 20,
+        minSimilarity: 0.2,
+      }),
     enabled: !!uid && query.length > 0,
   })
 }

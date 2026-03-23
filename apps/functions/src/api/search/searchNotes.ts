@@ -42,6 +42,7 @@ exports.handle = async (req: AuthenticatedRequest, res: Response) => {
       queryVector: FieldValue.vector(queryVector),
       limit: resultLimit,
       distanceMeasure: 'COSINE',
+      distanceResultField: 'distance',
     })
 
     const snapshot = await vectorQuery.get()
@@ -55,7 +56,7 @@ exports.handle = async (req: AuthenticatedRequest, res: Response) => {
           noteId: doc.id,
           ...convertDate(data, dateColumns),
         }
-        const distance = doc.get('distance') ?? 0
+        const distance = (data.distance as number) ?? 0
         const similarity = 1 - distance
         return { note, similarity }
       })
