@@ -38,7 +38,6 @@
 | type | name                                                                | description 　　　　　　                    | default port |
 | ---- | ------------------------------------------------------------------- | ------------------------------------------- | ------------ |
 | app  | [@vectornote/web](./apps/web/)                              | Web アプリ本体                              | ---          |
-| app  | [@vectornote/tanstack-start](./apps/tanstack-start/)        | TanStack Start SPA モードアプリ             | 3000         |
 | app  | [@vectornote/functions](./apps/functions/)                  | Cloud Functions                             | ---          |
 | pkg  | [@vectornote/common](./packages/common/)                    | 共通で使用する型定義など                     | ---          |
 
