@@ -53,6 +53,13 @@ Firestore
 - 更新可能なフィールドのみ定義
 - `updatedAt: FieldValue` は必須、その他は用途に応じてオプショナル
 
+### 1.4 firebase-adminを使用する場合
+
+- FieldValue型はfirebaseライブラリとfirebase-adminライブラリで定義が異なります。
+- そのため、firebase-adminを使ったCRUDを行う場合は、Dtoの型定義を分けるべきです。
+  - Create{エンティティ名}DtoFromAdmin のようなsuffixをつけることで型定義を作成しましょう。
+  - firebase-adminを使った型定義も packages/common に記述すること。
+
 ### テンプレート
 
 ```typescript
@@ -253,6 +260,12 @@ export const fetchExamplesOperation = async (
   return { items, lastDoc, hasMore }
 }
 ```
+
+### 2.5 注意点
+
+- Operations層はエンティティへの操作を抽象化する層です。
+- そのため、特定のフィールドや値を更新するためだけのOperation関数は作成してはいけません。
+- 更新したいフィールドがあれば、Operations層を呼ぶ際にdtoを作成し、Operation関数には「エンティティを更新する」という抽象化した役割だけを与えましょう。
 
 ---
 

@@ -3,7 +3,7 @@ import type {
   Note,
   NoteId,
   Uid,
-  UpdateNoteDto,
+  UpdateNoteDtoFromAdmin,
 } from '@vectornote/common'
 import { noteCollection, userCollection } from '@vectornote/common'
 
@@ -68,7 +68,7 @@ export const createNoteOperation = async (
 export const updateNoteOperation = async (
   uid: Uid,
   noteId: NoteId,
-  dto: UpdateNoteDto,
+  dto: UpdateNoteDtoFromAdmin,
 ): Promise<void> => {
   await noteDocRef(uid, noteId).update(dto)
 }
