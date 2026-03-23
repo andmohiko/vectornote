@@ -16,5 +16,23 @@ service cloud.firestore {
     function isUser(userId) {
       return request.auth.uid == userId;
     }
+
+    match /users/{userId} {
+      allow read, update: if isSignedIn() && isUser(userId);
+      allow create: if isSignedIn() && isUser(userId);
+
+      match /notes/{noteId} {
+        allow read: if isSignedIn() && isUser(userId);
+        allow create: if isSignedIn() && isUser(userId)
+                      && requestData().content is string
+                      && requestData().content.size() > 0
+                      && requestData().content.size() <= 10000;
+        allow update: if isSignedIn() && isUser(userId)
+                      && requestData().content is string
+                      && requestData().content.size() > 0
+                      && requestData().content.size() <= 10000;
+        allow delete: if isSignedIn() && isUser(userId);
+      }
+    }
   }
 }
