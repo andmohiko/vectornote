@@ -1,0 +1,67 @@
+import { Link, useSearch } from '@tanstack/react-router'
+import { TagIcon } from 'lucide-react'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuBadge,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSkeleton,
+  SidebarRail,
+} from '@/components/ui/sidebar'
+import { useTags } from '@/features/tags/hooks/useTags'
+
+export const SideNav = () => {
+  const { tags, isLoading } = useTags()
+  const search = useSearch({ strict: false }) as { tag?: string }
+  const selectedTag = search.tag ?? null
+
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>タグ</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-1">
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={selectedTag === null} tooltip="すべて">
+                  <Link to="/" search={{}}>
+                    <TagIcon />
+                    <span>すべて</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {isLoading
+                ? Array.from({ length: 4 }).map((_, i) => (
+                    <SidebarMenuItem key={i}>
+                      <SidebarMenuSkeleton />
+                    </SidebarMenuItem>
+                  ))
+                : tags.map((tag) => (
+                    <SidebarMenuItem key={tag.tagId}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={selectedTag === tag.label}
+                        tooltip={tag.label}
+                      >
+                        <Link to="/" search={{ tag: tag.label }}>
+                          <TagIcon />
+                          <span>{tag.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                      <SidebarMenuBadge>{tag.count}</SidebarMenuBadge>
+                    </SidebarMenuItem>
+                  ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarRail />
+    </Sidebar>
+  )
+}

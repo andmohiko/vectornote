@@ -12,6 +12,7 @@ import {
   orderBy,
   limit,
   startAfter,
+  where,
 } from 'firebase/firestore'
 import type { CreateNoteDto, Note, NoteId, UpdateNoteDto } from '@vectornote/common'
 import { noteCollection, userCollection } from '@vectornote/common'
@@ -68,8 +69,11 @@ export const fetchNotesOperation = async (
   uid: Uid,
   pageSize: number,
   lastDocument: DocumentSnapshot | null,
+  tag?: string,
 ): Promise<FetchResultWithPagination<Note>> => {
-  const baseConstraints = [orderBy('updatedAt', 'desc')]
+  const baseConstraints = tag
+    ? [where('tags', 'array-contains', tag), orderBy('updatedAt', 'desc')]
+    : [orderBy('updatedAt', 'desc')]
   const constraints = lastDocument
     ? [...baseConstraints, startAfter(lastDocument), limit(pageSize)]
     : [...baseConstraints, limit(pageSize)]

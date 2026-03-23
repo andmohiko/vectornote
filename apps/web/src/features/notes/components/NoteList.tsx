@@ -8,7 +8,11 @@ import { useNotes } from '../hooks/useNotes'
 import { NoteCard } from './NoteCard'
 import { NoteDetailModal } from './NoteDetailModal'
 
-export const NoteList = () => {
+type NoteListProps = {
+  tag?: string
+}
+
+export const NoteList = ({ tag }: NoteListProps) => {
   const {
     data,
     isLoading,
@@ -17,7 +21,7 @@ export const NoteList = () => {
     fetchNextPage,
     isError,
     refetch,
-  } = useNotes()
+  } = useNotes(tag)
 
   const [selectedNote, setSelectedNote] = useState<Note | null>(null)
   const observerRef = useRef<HTMLDivElement>(null)

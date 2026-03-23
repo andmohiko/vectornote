@@ -8,6 +8,8 @@ import {
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import Footer from '@/components/Footer'
 import Header from '@/components/Header'
+import { SideNav } from '@/components/SideNav'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { Toaster } from '@/components/ui/sonner'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import TanStackQueryProvider from '../integrations/tanstack-query/root-provider'
@@ -58,11 +60,16 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <>
-      <Header />
-      {children}
-      <Footer />
-    </>
+    <SidebarProvider>
+      <SideNav />
+      <SidebarInset>
+        <Header />
+        <div className="flex-1 px-4">
+          {children}
+        </div>
+        <Footer />
+      </SidebarInset>
+    </SidebarProvider>
   )
 }
 
