@@ -50,3 +50,9 @@ export type UpdateNoteDtoFromAdmin = {
   ogp?: Note['ogp']
   updatedAt: AdminFieldValue
 }
+
+/** 検索結果型 */
+export type SearchResult = {
+  note: Note
+  similarity: number // 0.0 ~ 1.0
+}
