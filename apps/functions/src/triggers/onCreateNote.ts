@@ -3,6 +3,11 @@ import { FieldValue } from 'firebase-admin/firestore'
 import { onDocumentCreated } from 'firebase-functions/v2/firestore'
 import '~/config/firebase'
 import { updateNoteOperation } from '~/infrastructure/firestore/notes'
+import {
+  createTagOperation,
+  fetchTagOperation,
+  updateTagOperation,
+} from '~/infrastructure/firestore/tags'
 import { serverTimestamp } from '~/lib/firebase'
 import { getOpenAIClient } from '~/lib/openai'
 import { buildEmbeddingText } from '~/utils/embedding'
@@ -47,6 +52,29 @@ export const onCreateNote = onDocumentCreated(
       await updateNoteOperation(uid, noteId, dto)
     } catch (error) {
       console.error('Embedding generation failed for note:', noteId, error)
+    }
+
+    // タグ同期：各タグのカウントをインクリメント（存在しなければ新規作成）
+    const tagList: string[] = tags ?? []
+    for (const label of tagList) {
+      try {
+        const existing = await fetchTagOperation(uid, label)
+        if (existing) {
+          await updateTagOperation(uid, label, {
+            count: FieldValue.increment(1),
+            updatedAt: serverTimestamp,
+          })
+        } else {
+          await createTagOperation(uid, label, {
+            label,
+            count: 1,
+            createdAt: serverTimestamp,
+            updatedAt: serverTimestamp,
+          })
+        }
+      } catch (error) {
+        console.error('Tag sync failed for label:', label, error)
+      }
     }
   }),
 )

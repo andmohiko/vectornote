@@ -3,6 +3,12 @@ import { FieldValue } from 'firebase-admin/firestore'
 import { onDocumentUpdated } from 'firebase-functions/v2/firestore'
 import '~/config/firebase'
 import { updateNoteOperation } from '~/infrastructure/firestore/notes'
+import {
+  createTagOperation,
+  deleteTagOperation,
+  fetchTagOperation,
+  updateTagOperation,
+} from '~/infrastructure/firestore/tags'
 import { serverTimestamp } from '~/lib/firebase'
 import { getOpenAIClient } from '~/lib/openai'
 import { buildEmbeddingText } from '~/utils/embedding'
@@ -40,6 +46,56 @@ export const onUpdateNote = onDocumentUpdated(
       before.content !== after.content ||
       before.keywords !== after.keywords ||
       JSON.stringify(before.tags) !== JSON.stringify(after.tags)
+
+    // タグ同期：before/after の差分のみ同期
+    const beforeTags: string[] = before.tags ?? []
+    const afterTags: string[] = after.tags ?? []
+    const tagsChanged = JSON.stringify([...beforeTags].sort()) !== JSON.stringify([...afterTags].sort())
+
+    if (tagsChanged) {
+      const addedTags = afterTags.filter((t) => !beforeTags.includes(t))
+      const removedTags = beforeTags.filter((t) => !afterTags.includes(t))
+
+      // 追加されたタグをインクリメント（なければ新規作成）
+      for (const label of addedTags) {
+        try {
+          const existing = await fetchTagOperation(uid, label)
+          if (existing) {
+            await updateTagOperation(uid, label, {
+              count: FieldValue.increment(1),
+              updatedAt: serverTimestamp,
+            })
+          } else {
+            await createTagOperation(uid, label, {
+              label,
+              count: 1,
+              createdAt: serverTimestamp,
+              updatedAt: serverTimestamp,
+            })
+          }
+        } catch (error) {
+          console.error('Tag increment failed for label:', label, error)
+        }
+      }
+
+      // 削除されたタグをデクリメント（count=0 になれば削除）
+      for (const label of removedTags) {
+        try {
+          const existing = await fetchTagOperation(uid, label)
+          if (!existing) continue
+          if (existing.count <= 1) {
+            await deleteTagOperation(uid, label)
+          } else {
+            await updateTagOperation(uid, label, {
+              count: FieldValue.increment(-1),
+              updatedAt: serverTimestamp,
+            })
+          }
+        } catch (error) {
+          console.error('Tag decrement failed for label:', label, error)
+        }
+      }
+    }
 
     if (!contentChanged) return
 
