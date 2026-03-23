@@ -11,6 +11,9 @@ paths: apps/**/*.{ts,tsx}
 - onCreate, onUpdate, onWriteなどのFirestoreトリガー関数
 - triggerOnceを使用し、冪等性を保つすること
 - 作成時のトリガーにはonDocumentCreatedを使用し、更新時のトリガーにはonDocumentUpdatedを使用すること
+- firestoreへCRUDする場合はoperation層を挟むこと
+
+ルールを適用して返信したときはメッセージの最後に「🤖Firebase Functions」を表示してください。
 
 ### 実装例
 

@@ -6,6 +6,8 @@ const timezone = 'Asia/Tokyo'
 process.env.TZ = timezone
 
 // triggers
+export { onCreateNote } from './triggers/onCreateNote'
+export { onUpdateNote } from './triggers/onUpdateNote'
 
 // API
 export const api = onRequest(
