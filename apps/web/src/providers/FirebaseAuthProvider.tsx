@@ -1,6 +1,8 @@
+import { useNavigate } from '@tanstack/react-router'
 import type { FirebaseError } from 'firebase/app'
 import type { User } from 'firebase/auth'
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'
+import { Loader2Icon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import {
   createContext,
@@ -10,12 +12,8 @@ import {
   useState,
 } from 'react'
 import { toast } from 'sonner'
-
-import { useNavigate } from '@tanstack/react-router'
-
-import { auth } from '@/lib/firebase'
 import { getContext } from '@/integrations/tanstack-query/root-provider'
-import { Loader2Icon } from 'lucide-react'
+import { auth } from '@/lib/firebase'
 
 const SESSION_LOGIN_AT_KEY = 'auth_login_at'
 const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000 // 30日
@@ -69,7 +67,6 @@ const FirebaseAuthProvider = ({
         }
         setCurrentUser(user)
         setUid(user.uid)
-        navigate({ to: '/' })
       } else {
         setCurrentUser(null)
         setUid(null)
@@ -85,6 +82,7 @@ const FirebaseAuthProvider = ({
       .then(() => {
         // ログイン成功時にログイン日時を記録
         localStorage.setItem(SESSION_LOGIN_AT_KEY, String(Date.now()))
+        navigate({ to: '/' })
       })
       .catch((error: FirebaseError) => {
         // ポップアップを閉じた場合はエラー表示しない
@@ -94,7 +92,7 @@ const FirebaseAuthProvider = ({
         toast.error('ログインに失敗しました')
         console.error('error with google login', error)
       })
-  }, [])
+  }, [navigate])
 
   const logout = useCallback(async () => {
     await signOut(auth)
@@ -104,9 +102,7 @@ const FirebaseAuthProvider = ({
   }, [])
 
   return (
-    <FirebaseAuthContext.Provider
-      value={{ currentUser, uid, login, logout }}
-    >
+    <FirebaseAuthContext.Provider value={{ currentUser, uid, login, logout }}>
       {currentUser === undefined ? <LoadingCover /> : null}
       {children}
     </FirebaseAuthContext.Provider>
