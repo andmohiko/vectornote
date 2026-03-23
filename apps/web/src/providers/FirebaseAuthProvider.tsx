@@ -12,8 +12,10 @@ import {
   useState,
 } from 'react'
 import { toast } from 'sonner'
+import type { Uid } from '@vectornote/common'
 import { getContext } from '@/integrations/tanstack-query/root-provider'
-import { auth } from '@/lib/firebase'
+import { fetchUserOperation, createUserOperation } from '@/infrastructure/firestore/users'
+import { auth, serverTimestamp } from '@/lib/firebase'
 
 const SESSION_LOGIN_AT_KEY = 'auth_login_at'
 const SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000 // 30日
@@ -79,9 +81,22 @@ const FirebaseAuthProvider = ({
   const login = useCallback(async () => {
     const googleProvider = new GoogleAuthProvider()
     signInWithPopup(auth, googleProvider)
-      .then(() => {
+      .then(async (result) => {
         // ログイン成功時にログイン日時を記録
         localStorage.setItem(SESSION_LOGIN_AT_KEY, String(Date.now()))
+
+        // ユーザードキュメントの存在確認
+        const uid = result.user.uid as Uid
+        const existingUser = await fetchUserOperation(uid)
+        if (!existingUser) {
+          // ユーザードキュメントが存在しない場合は作成
+          await createUserOperation(uid, {
+            email: result.user.email ?? '',
+            createdAt: serverTimestamp,
+            updatedAt: serverTimestamp,
+          })
+        }
+
         navigate({ to: '/' })
       })
       .catch((error: FirebaseError) => {
