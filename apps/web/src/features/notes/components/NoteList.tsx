@@ -1,6 +1,5 @@
-import { Link } from '@tanstack/react-router'
-import { useEffect, useRef, useState } from 'react'
 import type { Note } from '@vectornote/common'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
@@ -10,9 +9,10 @@ import { NoteDetailModal } from './NoteDetailModal'
 
 type NoteListProps = {
   tag?: string
+  onClickCreate: () => void
 }
 
-export const NoteList = ({ tag }: NoteListProps) => {
+export const NoteList = ({ tag, onClickCreate }: NoteListProps) => {
   const {
     data,
     isLoading,
@@ -47,7 +47,7 @@ export const NoteList = ({ tag }: NoteListProps) => {
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-36 w-full rounded-lg" />
+          <Skeleton key={i.toString()} className="h-36 w-full rounded-lg" />
         ))}
       </div>
     )
@@ -72,9 +72,7 @@ export const NoteList = ({ tag }: NoteListProps) => {
         <p className="text-muted-foreground">
           メモがありません。最初のメモを作成しましょう。
         </p>
-        <Button asChild>
-          <Link to={'/new' as never}>新規作成</Link>
-        </Button>
+        <Button onClick={onClickCreate}>新規作成</Button>
       </div>
     )
   }

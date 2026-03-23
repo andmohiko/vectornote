@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type { Note } from '@vectornote/common'
 import { Button } from '@/components/ui/button'
 import {
@@ -7,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { useDisclosure } from '@/hooks/useDisclosure'
 import { useUpdateNoteMutation } from '../hooks/useUpdateNoteMutation'
 import type { NoteFormValues } from '../schemas/noteSchema'
 import { DeleteNoteDialog } from './DeleteNoteDialog'
@@ -19,7 +19,7 @@ type NoteDetailModalProps = {
 
 export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
   const { mutateAsync, isPending } = useUpdateNoteMutation(note?.noteId ?? '')
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const { isOpen: deleteDialogOpen, open: openDeleteDialog, close: closeDeleteDialog } = useDisclosure()
 
   const handleSubmit = async (values: NoteFormValues) => {
     await mutateAsync(values)
@@ -52,7 +52,7 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
                     type="button"
                     size="sm"
                     className="border-transparent bg-red-600 text-white hover:bg-red-700 hover:text-white"
-                    onClick={() => setDeleteDialogOpen(true)}
+                    onClick={openDeleteDialog}
                   >
                     削除
                   </Button>
@@ -68,7 +68,7 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
         <DeleteNoteDialog
           noteId={note.noteId}
           open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
+          onOpenChange={(open) => open ? openDeleteDialog() : closeDeleteDialog()}
           onDeleted={onClose}
         />
       )}
