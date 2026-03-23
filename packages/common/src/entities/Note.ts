@@ -6,12 +6,21 @@ export const noteCollection = 'notes' as const
 /** ID型エイリアス */
 export type NoteId = string
 
+/** OGP情報 */
+export type OgpInfo = {
+  url: string
+  title: string | null
+  description: string | null
+  image: string | null
+}
+
 /** Entity型（Firestoreから取得したデータ、Date変換済み） */
 export type Note = {
   noteId: NoteId
   createdAt: Date
   content: string
   embedding: VectorValue | null
+  ogp: OgpInfo | null
   keywords: string
   tags: string[]
   title: string | null
@@ -31,6 +40,7 @@ export type CreateNoteDto = Omit<
 export type UpdateNoteDto = {
   content?: Note['content']
   keywords?: Note['keywords']
+  ogp?: Note['ogp']
   tags?: Note['tags']
   title?: Note['title']
   updatedAt: FieldValue

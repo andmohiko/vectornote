@@ -2,6 +2,7 @@ import type { Note } from '@vectornote/common'
 import dayjs from 'dayjs'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
+import { OgpPreview } from './OgpPreview'
 
 const URL_REGEX = /https?:\/\/[^\s]+/g
 
@@ -62,6 +63,7 @@ export const NoteCard = ({ note, onClick }: NoteCardProps) => {
               ))}
             </div>
           )}
+          {note.ogp && <OgpPreview ogp={note.ogp} />}
         </CardContent>
         <CardFooter className="border-0 bg-transparent">
           <span className="text-xs text-muted-foreground">{updatedAt}</span>
