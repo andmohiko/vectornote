@@ -22,6 +22,7 @@ export const useCreateNoteMutation = () => {
         keywords: values.keywords ?? '',
         tags: values.tags || [],
         embedding: null,
+        ogp: null,
         createdAt: serverTimestamp,
         updatedAt: serverTimestamp,
       }
