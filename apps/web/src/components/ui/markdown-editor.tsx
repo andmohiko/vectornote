@@ -65,8 +65,8 @@ export const MarkdownEditor = ({
       view.destroy()
       viewRef.current = null
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 初期化時のみ実行
-  }, [])
+    // biome-ignore lint/correctness/useExhaustiveDependencies: EditorViewの初期化は一度だけ行う。value/placeholder/autoFocusの変更は別のuseEffectとkey再マウントで対応
+  }, [valueplaceholderautoFocus])
 
   // 外部からのvalue変更に対応（テンプレート選択時など）
   useEffect(() => {
@@ -92,10 +92,12 @@ export const MarkdownEditor = ({
   }, [handleFocus])
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: CodeMirror内部でフォーカス管理するため
     <div
       ref={containerRef}
       id={id}
-      // biome-ignore lint/a11y/noNoninteractiveTabindex: CodeMirror内部でフォーカス管理するため
+      role="textbox"
+      aria-multiline="true"
       tabIndex={0}
       className={cn(
         'flex w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none md:text-sm dark:bg-input/30',
