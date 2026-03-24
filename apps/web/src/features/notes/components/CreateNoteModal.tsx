@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -66,6 +67,7 @@ export const CreateNoteModal = ({ open, onClose }: CreateNoteModalProps) => {
         >
           <DialogHeader className="shrink-0">
             <DialogTitle>メモを作成</DialogTitle>
+            <DialogDescription className="sr-only">新しいメモを作成します</DialogDescription>
           </DialogHeader>
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             <NoteForm

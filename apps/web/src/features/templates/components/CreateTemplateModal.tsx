@@ -1,6 +1,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -29,6 +30,7 @@ export const CreateTemplateModal = ({
       <DialogContent className="flex h-full max-h-[700px] w-full max-w-[800px] flex-col overflow-hidden sm:max-w-[800px]">
         <DialogHeader className="shrink-0">
           <DialogTitle>テンプレートを作成</DialogTitle>
+          <DialogDescription className="sr-only">新しいテンプレートを作成します</DialogDescription>
         </DialogHeader>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <TemplateForm

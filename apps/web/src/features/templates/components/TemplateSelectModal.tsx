@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -40,6 +41,7 @@ export const TemplateSelectModal = ({
       <DialogContent className="flex h-full max-h-[500px] w-full max-w-[500px] flex-col overflow-hidden sm:max-w-[500px]">
         <DialogHeader className="shrink-0">
           <DialogTitle>テンプレートを選択</DialogTitle>
+          <DialogDescription className="sr-only">使用するテンプレートを選択します</DialogDescription>
         </DialogHeader>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           {isLoading ? (

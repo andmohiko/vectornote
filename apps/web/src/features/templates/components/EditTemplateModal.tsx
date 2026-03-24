@@ -3,6 +3,7 @@ import type { Template } from '@vectornote/common'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -33,6 +34,7 @@ export const EditTemplateModal = ({
       <DialogContent className="flex h-full max-h-[700px] w-full max-w-[800px] flex-col overflow-hidden sm:max-w-[800px]">
         <DialogHeader className="shrink-0">
           <DialogTitle>テンプレートを編集</DialogTitle>
+          <DialogDescription className="sr-only">テンプレートの内容を編集します</DialogDescription>
         </DialogHeader>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <TemplateForm
