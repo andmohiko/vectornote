@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { Badge } from '@/components/ui/badge'
+import { useRecentTags } from '@/features/tags/hooks/useRecentTags'
 import { useTags } from '@/features/tags/hooks/useTags'
 
 type TagSuggestionDropdownProps = {
@@ -13,27 +14,26 @@ export const TagSuggestionDropdown = ({
   activeTags,
   onSelect,
 }: TagSuggestionDropdownProps) => {
-  const { tags } = useTags()
+  const { tags: recentTags } = useRecentTags()
+  const { tags: allTags } = useTags()
 
   const suggestions = useMemo(() => {
-    const filtered = tags.filter((tag) => !activeTags.includes(tag.label))
-
     if (tagInput === '') {
-      return filtered.slice(0, 5)
+      return recentTags.filter((tag) => !activeTags.includes(tag.label))
     }
 
     const lowerInput = tagInput.toLowerCase()
-    return filtered.filter((tag) =>
-      tag.label.toLowerCase().startsWith(lowerInput),
-    )
-  }, [tags, tagInput, activeTags])
+    return allTags
+      .filter((tag) => !activeTags.includes(tag.label))
+      .filter((tag) => tag.label.toLowerCase().startsWith(lowerInput))
+  }, [recentTags, allTags, tagInput, activeTags])
 
   if (suggestions.length === 0) return null
 
   return (
     <div className="space-y-1.5">
       <p className="text-xs text-muted-foreground">
-        {tagInput === '' ? 'よく使うタグ' : '候補'}
+        {tagInput === '' ? '最近使ったタグ' : '候補'}
       </p>
       <div className="flex flex-wrap gap-1.5">
         {suggestions.map((tag) => (
