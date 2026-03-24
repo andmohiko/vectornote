@@ -12,7 +12,8 @@
       "WebFetch(domain:firebase.google.com)",
       "Bash(pnpm --filter @vectornote/functions tsc --noEmit)",
       "Bash(pnpm --filter @vectornote/web tsc --noEmit)",
-      "Bash(firebase firestore:indexes)"
+      "Bash(firebase firestore:indexes)",
+      "Bash(pnpm web build)"
     ],
     "deny": [],
     "ask": []
