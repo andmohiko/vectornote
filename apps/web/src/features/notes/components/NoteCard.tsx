@@ -54,6 +54,9 @@ export const NoteCard = ({ note, onClick }: NoteCardProps) => {
           <p className="line-clamp-10 whitespace-pre-line text-sm text-foreground">{renderContentWithLinks(note.content)}</p>
         </CardHeader>
         <CardContent className="flex-1">
+          {note.ogp && <OgpPreview ogp={note.ogp} />}
+        </CardContent>
+        <CardFooter className="flex-col items-start gap-2 border-0 bg-transparent">
           {note.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {note.tags.map((tag) => (
@@ -63,15 +66,14 @@ export const NoteCard = ({ note, onClick }: NoteCardProps) => {
               ))}
             </div>
           )}
-          {note.ogp && <OgpPreview ogp={note.ogp} />}
-        </CardContent>
-        <CardFooter className="border-0 bg-transparent">
-          <span className="text-xs text-muted-foreground">{updatedAt}</span>
-          {note.keywords && (
-            <span className="ml-3 truncate text-xs text-muted-foreground">
-              {note.keywords}
-            </span>
-          )}
+          <div className="flex items-center">
+            <span className="text-xs text-muted-foreground">{updatedAt}</span>
+            {note.keywords && (
+              <span className="ml-3 truncate text-xs text-muted-foreground">
+                {note.keywords}
+              </span>
+            )}
+          </div>
         </CardFooter>
       </Card>
     </button>
