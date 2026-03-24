@@ -1,15 +1,15 @@
-import type React from 'react'
-import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { X } from 'lucide-react'
-import { useForm } from 'react-hook-form'
+import type React from 'react'
+import { useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import { Spinner } from '@/components/ui/spinner'
-import { Textarea } from '@/components/ui/textarea'
 import { TagSuggestionDropdown } from '@/features/tags/components/TagSuggestionDropdown'
 import type { NoteFormValues } from '../schemas/noteSchema'
 import { noteFormSchema } from '../schemas/noteSchema'
@@ -41,6 +41,7 @@ export const NoteForm = ({
     reset,
     watch,
     setValue,
+    control,
     formState: { errors },
   } = useForm<NoteFormValues>({
     resolver: zodResolver(noteFormSchema),
@@ -103,7 +104,10 @@ export const NoteForm = ({
   }
 
   return (
-    <form onSubmit={handleSubmit(handleSubmitWithReset)} className={expandContent ? 'flex h-full flex-col gap-6' : 'space-y-6'}>
+    <form
+      onSubmit={handleSubmit(handleSubmitWithReset)}
+      className={expandContent ? 'flex h-full flex-col gap-6' : 'space-y-6'}
+    >
       <div className="space-y-2">
         <Label htmlFor="title">タイトル</Label>
         <Input
@@ -116,14 +120,25 @@ export const NoteForm = ({
         )}
       </div>
 
-      <div className={expandContent ? 'flex min-h-0 flex-1 flex-col space-y-2' : 'space-y-2'}>
+      <div
+        className={
+          expandContent ? 'flex min-h-0 flex-1 flex-col space-y-2' : 'space-y-2'
+        }
+      >
         <Label htmlFor="content">本文</Label>
-        <Textarea
-          id="content"
-          placeholder="メモの内容を入力..."
-          className={expandContent ? 'h-full min-h-0 resize-none break-all' : 'min-h-[12rem] break-all'}
-          autoFocus={autoFocusContent}
-          {...register('content')}
+        <Controller
+          name="content"
+          control={control}
+          render={({ field }) => (
+            <MarkdownEditor
+              id="content"
+              value={field.value}
+              onChange={field.onChange}
+              placeholder="メモの内容を入力..."
+              className={expandContent ? 'h-full min-h-0' : 'min-h-[12rem]'}
+              autoFocus={autoFocusContent}
+            />
+          )}
         />
         {errors.content && (
           <p className="text-sm text-destructive">{errors.content.message}</p>
@@ -167,7 +182,11 @@ export const NoteForm = ({
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-1">
             {tags.map((tag, index) => (
-              <Badge key={`${tag}-${index}`} variant="secondary" className="h-6 gap-1 px-2 text-xs">
+              <Badge
+                key={`${tag}-${index.toString()}`}
+                variant="secondary"
+                className="h-6 gap-1 px-2 text-xs"
+              >
                 {tag}
                 <button
                   type="button"
