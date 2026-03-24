@@ -66,7 +66,7 @@ export const MarkdownEditor = ({
       viewRef.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 初期化時のみ実行
-  }, [valueplaceholderautoFocus])
+  }, [])
 
   // 外部からのvalue変更に対応（テンプレート選択時など）
   useEffect(() => {
