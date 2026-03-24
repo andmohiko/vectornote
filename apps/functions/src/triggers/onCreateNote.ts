@@ -5,7 +5,7 @@ import '~/config/firebase'
 import { updateNoteOperation } from '~/infrastructure/firestore/notes'
 import {
   createTagOperation,
-  fetchTagOperation,
+  fetchTagByLabelOperation,
   updateTagOperation,
 } from '~/infrastructure/firestore/tags'
 import { serverTimestamp } from '~/lib/firebase'
@@ -58,14 +58,14 @@ export const onCreateNote = onDocumentCreated(
     const tagList: string[] = tags ?? []
     for (const label of tagList) {
       try {
-        const existing = await fetchTagOperation(uid, label)
+        const existing = await fetchTagByLabelOperation(uid, label)
         if (existing) {
-          await updateTagOperation(uid, label, {
+          await updateTagOperation(uid, existing.tagId, {
             count: FieldValue.increment(1),
             updatedAt: serverTimestamp,
           })
         } else {
-          await createTagOperation(uid, label, {
+          await createTagOperation(uid, {
             label,
             count: 1,
             createdAt: serverTimestamp,
