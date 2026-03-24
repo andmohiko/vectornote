@@ -24,6 +24,9 @@ export const MarkdownEditor = ({
   const containerRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const onChangeRef = useRef(onChange)
+  const initialValueRef = useRef(value)
+  const initialPlaceholderRef = useRef(placeholder)
+  const initialAutoFocusRef = useRef(autoFocus)
   const [isFocused, setIsFocused] = useState(false)
 
   onChangeRef.current = onChange
@@ -32,7 +35,7 @@ export const MarkdownEditor = ({
     viewRef.current?.focus()
   }, [])
 
-  // EditorViewの初期化
+  // EditorViewの初期化（refで初期値を参照するため依存配列は空でOK）
   useEffect(() => {
     if (!containerRef.current) return
 
@@ -46,8 +49,11 @@ export const MarkdownEditor = ({
     })
 
     const state = EditorState.create({
-      doc: value,
-      extensions: [...createMinimalSetup({ placeholder }), updateListener],
+      doc: initialValueRef.current,
+      extensions: [
+        ...createMinimalSetup({ placeholder: initialPlaceholderRef.current }),
+        updateListener,
+      ],
     })
 
     const view = new EditorView({
@@ -57,7 +63,7 @@ export const MarkdownEditor = ({
 
     viewRef.current = view
 
-    if (autoFocus) {
+    if (initialAutoFocusRef.current) {
       view.focus()
     }
 
@@ -65,8 +71,7 @@ export const MarkdownEditor = ({
       view.destroy()
       viewRef.current = null
     }
-    // biome-ignore lint/correctness/useExhaustiveDependencies: EditorViewの初期化は一度だけ行う。value/placeholder/autoFocusの変更は別のuseEffectとkey再マウントで対応
-  }, [valueplaceholderautoFocus])
+  }, [])
 
   // 外部からのvalue変更に対応（テンプレート選択時など）
   useEffect(() => {
