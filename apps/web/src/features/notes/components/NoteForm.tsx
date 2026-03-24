@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
 import { Textarea } from '@/components/ui/textarea'
+import { TagSuggestionDropdown } from '@/features/tags/components/TagSuggestionDropdown'
 import type { NoteFormValues } from '../schemas/noteSchema'
 import { noteFormSchema } from '../schemas/noteSchema'
 
@@ -56,12 +57,21 @@ export const NoteForm = ({
   const tags = watch('tags') ?? []
 
   const [tagInput, setTagInput] = useState('')
+  const [isTagInputFocused, setIsTagInputFocused] = useState(false)
 
   const addTag = () => {
     const trimmed = tagInput.trim()
     if (!trimmed) return
     if (tags.length >= 10) return
     setValue('tags', [...tags, trimmed], { shouldValidate: true })
+    setTagInput('')
+  }
+
+  const addTagByLabel = (label: string) => {
+    if (!label.trim()) return
+    if (tags.length >= 10) return
+    if (tags.includes(label)) return
+    setValue('tags', [...tags, label], { shouldValidate: true })
     setTagInput('')
   }
 
@@ -134,17 +144,26 @@ export const NoteForm = ({
 
       <div className="space-y-2">
         <Label htmlFor="tags">タグ</Label>
-        <div className="flex gap-2">
-          <Input
-            id="tags"
-            placeholder="タグを入力してEnterで追加（最大10個）"
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={handleTagKeyDown}
-            onBlur={addTag}
-            disabled={tags.length >= 10}
+        <Input
+          id="tags"
+          placeholder="タグを入力してEnterで追加（最大10個）"
+          value={tagInput}
+          onChange={(e) => setTagInput(e.target.value)}
+          onKeyDown={handleTagKeyDown}
+          onFocus={() => setIsTagInputFocused(true)}
+          onBlur={() => {
+            setIsTagInputFocused(false)
+            addTag()
+          }}
+          disabled={tags.length >= 10}
+        />
+        {isTagInputFocused && (
+          <TagSuggestionDropdown
+            tagInput={tagInput}
+            activeTags={tags}
+            onSelect={addTagByLabel}
           />
-        </div>
+        )}
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-1">
             {tags.map((tag, index) => (

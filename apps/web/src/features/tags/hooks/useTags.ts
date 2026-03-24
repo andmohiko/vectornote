@@ -23,7 +23,7 @@ export const useTags = (): UseTagsReturn => {
     const unsubscribe = subscribeTagsOperation(
       uid,
       (updatedTags) => {
-        setTags(updatedTags)
+        setTags([...updatedTags].sort((a, b) => b.count - a.count))
         setIsLoading(false)
       },
       (err) => {
