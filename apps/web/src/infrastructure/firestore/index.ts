@@ -10,6 +10,12 @@ export {
   updateNoteOperation,
 } from './notes'
 export {
+  createTemplateOperation,
+  deleteTemplateOperation,
+  subscribeTemplatesOperation,
+  updateTemplateOperation,
+} from './templates'
+export {
   createUserOperation,
   deleteUserOperation,
   fetchUserOperation,
