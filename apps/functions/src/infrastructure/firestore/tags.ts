@@ -17,25 +17,27 @@ const tagsRef = (uid: Uid) =>
 
 const tagDocRef = (uid: Uid, tagId: TagId) => tagsRef(uid).doc(tagId)
 
-/** タグを取得する */
-export const fetchTagOperation = async (
+/** ラベル名でタグを取得する */
+export const fetchTagByLabelOperation = async (
   uid: Uid,
-  tagId: TagId,
+  label: string,
 ): Promise<Tag | null> => {
-  const snapshot = await tagDocRef(uid, tagId).get()
-  if (!snapshot.exists) return null
-  const data = snapshot.data()
-  if (!data) return null
-  return { tagId: snapshot.id, ...convertDate(data, dateColumns) } as Tag
+  const snapshot = await tagsRef(uid)
+    .where('label', '==', label)
+    .limit(1)
+    .get()
+  if (snapshot.empty) return null
+  const doc = snapshot.docs[0]
+  const data = doc.data()
+  return { tagId: doc.id, ...convertDate(data, dateColumns) } as Tag
 }
 
-/** タグを作成する（タグIDにはラベル名を使用） */
+/** タグを作成する（自動生成ID） */
 export const createTagOperation = async (
   uid: Uid,
-  tagId: TagId,
   dto: CreateTagDtoFromAdmin,
 ): Promise<void> => {
-  await tagDocRef(uid, tagId).set(dto)
+  await tagsRef(uid).add(dto)
 }
 
 /** タグを更新する */

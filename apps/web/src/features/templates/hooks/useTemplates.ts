@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react'
-import type { Tag } from '@vectornote/common'
-import { subscribeTagsOperation } from '@/infrastructure/firestore/tags'
+import type { Template } from '@vectornote/common'
+import { subscribeTemplatesOperation } from '@/infrastructure/firestore/templates'
 import { useFirebaseAuthContext } from '@/providers/FirebaseAuthProvider'
 import { errorMessage } from '@/utils/errorMessage'
 
-export type UseTagsReturn = {
-  tags: Array<Tag>
+export type UseTemplatesReturn = {
+  templates: Array<Template>
   isLoading: boolean
   error: string | null
 }
 
-export const useTags = (): UseTagsReturn => {
+export const useTemplates = (): UseTemplatesReturn => {
   const { uid } = useFirebaseAuthContext()
-  const [tags, setTags] = useState<Array<Tag>>([])
+  const [templates, setTemplates] = useState<Array<Template>>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -20,10 +20,10 @@ export const useTags = (): UseTagsReturn => {
     if (!uid) return
 
     setIsLoading(true)
-    const unsubscribe = subscribeTagsOperation(
+    const unsubscribe = subscribeTemplatesOperation(
       uid,
-      (updatedTags) => {
-        setTags([...updatedTags].sort((a, b) => b.count - a.count))
+      (updatedTemplates) => {
+        setTemplates(updatedTemplates)
         setIsLoading(false)
       },
       (err) => {
@@ -35,5 +35,5 @@ export const useTags = (): UseTagsReturn => {
     return () => unsubscribe()
   }, [uid])
 
-  return { tags, isLoading, error }
+  return { templates, isLoading, error }
 }

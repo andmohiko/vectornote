@@ -6,7 +6,7 @@ import { updateNoteOperation } from '~/infrastructure/firestore/notes'
 import {
   createTagOperation,
   deleteTagOperation,
-  fetchTagOperation,
+  fetchTagByLabelOperation,
   updateTagOperation,
 } from '~/infrastructure/firestore/tags'
 import { serverTimestamp } from '~/lib/firebase'
@@ -59,14 +59,14 @@ export const onUpdateNote = onDocumentUpdated(
       // 追加されたタグをインクリメント（なければ新規作成）
       for (const label of addedTags) {
         try {
-          const existing = await fetchTagOperation(uid, label)
+          const existing = await fetchTagByLabelOperation(uid, label)
           if (existing) {
-            await updateTagOperation(uid, label, {
+            await updateTagOperation(uid, existing.tagId, {
               count: FieldValue.increment(1),
               updatedAt: serverTimestamp,
             })
           } else {
-            await createTagOperation(uid, label, {
+            await createTagOperation(uid, {
               label,
               count: 1,
               createdAt: serverTimestamp,
@@ -81,12 +81,12 @@ export const onUpdateNote = onDocumentUpdated(
       // 削除されたタグをデクリメント（count=0 になれば削除）
       for (const label of removedTags) {
         try {
-          const existing = await fetchTagOperation(uid, label)
+          const existing = await fetchTagByLabelOperation(uid, label)
           if (!existing) continue
           if (existing.count <= 1) {
-            await deleteTagOperation(uid, label)
+            await deleteTagOperation(uid, existing.tagId)
           } else {
-            await updateTagOperation(uid, label, {
+            await updateTagOperation(uid, existing.tagId, {
               count: FieldValue.increment(-1),
               updatedAt: serverTimestamp,
             })

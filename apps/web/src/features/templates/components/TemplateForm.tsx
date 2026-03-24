@@ -11,50 +11,44 @@ import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
 import { Textarea } from '@/components/ui/textarea'
 import { TagSuggestionDropdown } from '@/features/tags/components/TagSuggestionDropdown'
-import type { NoteFormValues } from '../schemas/noteSchema'
-import { noteFormSchema } from '../schemas/noteSchema'
+import type { TemplateFormValues } from '../schemas/templateSchema'
+import { templateFormSchema } from '../schemas/templateSchema'
 
-type NoteFormProps = {
-  onSubmit: (values: NoteFormValues) => void | Promise<void>
-  defaultValues?: Partial<NoteFormValues>
+type TemplateFormProps = {
+  onSubmit: (values: TemplateFormValues) => void | Promise<void>
+  defaultValues?: Partial<TemplateFormValues>
   submitLabel?: string
   isPending?: boolean
-  resetOnSuccess?: boolean
   footerLeft?: React.ReactNode
-  expandContent?: boolean
-  autoFocusContent?: boolean
 }
 
-export const NoteForm = ({
+export const TemplateForm = ({
   onSubmit,
   defaultValues,
   submitLabel = '保存',
   isPending = false,
-  resetOnSuccess = false,
   footerLeft,
-  expandContent = false,
-  autoFocusContent = false,
-}: NoteFormProps) => {
+}: TemplateFormProps) => {
   const {
     register,
     handleSubmit,
-    reset,
     watch,
     setValue,
     formState: { errors },
-  } = useForm<NoteFormValues>({
-    resolver: zodResolver(noteFormSchema),
+  } = useForm<TemplateFormValues>({
+    resolver: zodResolver(templateFormSchema),
     mode: 'all',
     defaultValues: {
-      content: '',
-      title: '',
-      keywords: '',
-      tags: [],
+      name: '',
+      body: '',
+      defaultTitle: '',
+      defaultKeyword: '',
+      defaultTags: [],
       ...defaultValues,
     },
   })
 
-  const tags = watch('tags') ?? []
+  const tags = watch('defaultTags') ?? []
 
   const [tagInput, setTagInput] = useState('')
   const [isTagInputFocused, setIsTagInputFocused] = useState(false)
@@ -63,7 +57,8 @@ export const NoteForm = ({
     const trimmed = tagInput.trim()
     if (!trimmed) return
     if (tags.length >= 10) return
-    setValue('tags', [...tags, trimmed], { shouldValidate: true })
+    if (tags.includes(trimmed)) return
+    setValue('defaultTags', [...tags, trimmed], { shouldValidate: true })
     setTagInput('')
   }
 
@@ -71,13 +66,13 @@ export const NoteForm = ({
     if (!label.trim()) return
     if (tags.length >= 10) return
     if (tags.includes(label)) return
-    setValue('tags', [...tags, label], { shouldValidate: true })
+    setValue('defaultTags', [...tags, label], { shouldValidate: true })
     setTagInput('')
   }
 
   const removeTag = (index: number) => {
     setValue(
-      'tags',
+      'defaultTags',
       tags.filter((_, i) => i !== index),
       { shouldValidate: true },
     )
@@ -94,58 +89,61 @@ export const NoteForm = ({
     }
   }
 
-  const handleSubmitWithReset = async (values: NoteFormValues) => {
-    await onSubmit(values)
-    if (resetOnSuccess) {
-      reset()
-      setTagInput('')
-    }
-  }
-
   return (
-    <form onSubmit={handleSubmit(handleSubmitWithReset)} className={expandContent ? 'flex h-full flex-col gap-6' : 'space-y-6'}>
+    <form onSubmit={handleSubmit(onSubmit)} className="flex h-full flex-col gap-6">
       <div className="space-y-2">
-        <Label htmlFor="title">タイトル</Label>
+        <Label htmlFor="name">テンプレート名</Label>
         <Input
-          id="title"
+          id="name"
+          placeholder="テンプレート名（例: 採用面接議事録）"
+          {...register('name')}
+        />
+        {errors.name && (
+          <p className="text-sm text-destructive">{errors.name.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="defaultTitle">デフォルトタイトル</Label>
+        <Input
+          id="defaultTitle"
           placeholder="タイトル（任意）"
-          {...register('title')}
+          {...register('defaultTitle')}
         />
-        {errors.title && (
-          <p className="text-sm text-destructive">{errors.title.message}</p>
+        {errors.defaultTitle && (
+          <p className="text-sm text-destructive">{errors.defaultTitle.message}</p>
         )}
       </div>
 
-      <div className={expandContent ? 'flex min-h-0 flex-1 flex-col space-y-2' : 'space-y-2'}>
-        <Label htmlFor="content">本文</Label>
+      <div className="flex min-h-0 flex-1 flex-col space-y-2">
+        <Label htmlFor="body">本文</Label>
         <Textarea
-          id="content"
-          placeholder="メモの内容を入力..."
-          className={expandContent ? 'h-full min-h-0 resize-none break-all' : 'min-h-[12rem] break-all'}
-          autoFocus={autoFocusContent}
-          {...register('content')}
+          id="body"
+          placeholder="テンプレートの本文を入力..."
+          className="h-full min-h-0 resize-none break-all"
+          {...register('body')}
         />
-        {errors.content && (
-          <p className="text-sm text-destructive">{errors.content.message}</p>
+        {errors.body && (
+          <p className="text-sm text-destructive">{errors.body.message}</p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="keywords">キーワード</Label>
+        <Label htmlFor="defaultKeyword">デフォルトキーワード</Label>
         <Input
-          id="keywords"
+          id="defaultKeyword"
           placeholder="カンマ区切りで入力（任意）"
-          {...register('keywords')}
+          {...register('defaultKeyword')}
         />
-        {errors.keywords && (
-          <p className="text-sm text-destructive">{errors.keywords.message}</p>
+        {errors.defaultKeyword && (
+          <p className="text-sm text-destructive">{errors.defaultKeyword.message}</p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="tags">タグ</Label>
+        <Label htmlFor="defaultTags">デフォルトタグ</Label>
         <Input
-          id="tags"
+          id="defaultTags"
           placeholder="タグを入力してEnterで追加（最大10個）"
           value={tagInput}
           onChange={(e) => setTagInput(e.target.value)}
@@ -181,8 +179,8 @@ export const NoteForm = ({
             ))}
           </div>
         )}
-        {errors.tags && (
-          <p className="text-sm text-destructive">{errors.tags.message}</p>
+        {errors.defaultTags && (
+          <p className="text-sm text-destructive">{errors.defaultTags.message}</p>
         )}
       </div>
 

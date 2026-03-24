@@ -3,7 +3,7 @@ import { onDocumentDeleted } from 'firebase-functions/v2/firestore'
 import '~/config/firebase'
 import {
   deleteTagOperation,
-  fetchTagOperation,
+  fetchTagByLabelOperation,
   updateTagOperation,
 } from '~/infrastructure/firestore/tags'
 import { serverTimestamp } from '~/lib/firebase'
@@ -20,12 +20,12 @@ export const onDeleteNote = onDocumentDeleted(
     // タグ同期：各タグのカウントをデクリメント（count=0 になれば削除）
     for (const label of tags) {
       try {
-        const existing = await fetchTagOperation(uid, label)
+        const existing = await fetchTagByLabelOperation(uid, label)
         if (!existing) continue
         if (existing.count <= 1) {
-          await deleteTagOperation(uid, label)
+          await deleteTagOperation(uid, existing.tagId)
         } else {
-          await updateTagOperation(uid, label, {
+          await updateTagOperation(uid, existing.tagId, {
             count: FieldValue.increment(-1),
             updatedAt: serverTimestamp,
           })

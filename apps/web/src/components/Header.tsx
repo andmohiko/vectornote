@@ -1,11 +1,10 @@
 import { Link, useRouterState } from '@tanstack/react-router'
+import { Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SidebarTrigger } from '@/components/ui/sidebar'
-import { useFirebaseAuthContext } from '@/providers/FirebaseAuthProvider'
 import { SearchBar } from '@/features/search/components/SearchBar'
 
 export default function Header() {
-  const { logout } = useFirebaseAuthContext()
   const routerState = useRouterState()
   const search = routerState.location.search as Record<string, unknown>
   const q = typeof search.q === 'string' ? search.q : ''
@@ -20,8 +19,10 @@ export default function Header() {
         <div className="flex-1">
           <SearchBar initialQuery={q} />
         </div>
-        <Button variant="ghost" size="sm" onClick={logout}>
-          ログアウト
+        <Button variant="ghost" size="icon" asChild>
+          <Link to="/settings">
+            <Settings className="size-5" />
+          </Link>
         </Button>
       </div>
     </header>
