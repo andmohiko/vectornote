@@ -16,6 +16,7 @@ import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import TanStackQueryProvider from '../integrations/tanstack-query/root-provider'
 import { useLocation } from '@tanstack/react-router'
 import { Providers } from '../providers'
+import { useServiceWorker } from '@/hooks/useServiceWorker'
 import appCss from '../styles.css?url'
 
 interface MyRouterContext {
@@ -42,11 +43,35 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         name: 'description',
         content: 'セマンティック検索メモ帳アプリケーション',
       },
+      {
+        name: 'theme-color',
+        content: '#000000',
+      },
+      {
+        name: 'apple-mobile-web-app-capable',
+        content: 'yes',
+      },
+      {
+        name: 'apple-mobile-web-app-status-bar-style',
+        content: 'default',
+      },
+      {
+        name: 'apple-mobile-web-app-title',
+        content: 'Vector Memo',
+      },
     ],
     links: [
       {
         rel: 'stylesheet',
         href: appCss,
+      },
+      {
+        rel: 'apple-touch-icon',
+        href: '/logo192.png',
+      },
+      {
+        rel: 'manifest',
+        href: '/manifest.webmanifest',
       },
     ],
   }),
@@ -54,6 +79,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 })
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
+  useServiceWorker()
   const location = useLocation()
   const isAuthPath = location.pathname === '/login'
 
