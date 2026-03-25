@@ -23,6 +23,7 @@ type NoteFormProps = {
   isPending?: boolean
   resetOnSuccess?: boolean
   footerLeft?: React.ReactNode
+  contentLabelRight?: React.ReactNode
   expandContent?: boolean
   autoFocusContent?: boolean
 }
@@ -35,6 +36,7 @@ export const NoteForm = ({
   isPending = false,
   resetOnSuccess = false,
   footerLeft,
+  contentLabelRight,
   expandContent = false,
   autoFocusContent = false,
 }: NoteFormProps) => {
@@ -136,7 +138,10 @@ export const NoteForm = ({
           expandContent ? 'flex min-h-0 flex-1 flex-col space-y-2' : 'space-y-2'
         }
       >
-        <Label htmlFor="content">本文</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="content">本文</Label>
+          {contentLabelRight}
+        </div>
         <Controller
           name="content"
           control={control}

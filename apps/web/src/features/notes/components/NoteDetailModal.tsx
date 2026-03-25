@@ -1,4 +1,7 @@
 import type { Note } from '@vectornote/common'
+import { Check, Copy } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -21,6 +24,19 @@ type NoteDetailModalProps = {
 export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
   const { mutateAsync, isPending } = useUpdateNoteMutation(note?.noteId ?? '')
   const { isOpen: deleteDialogOpen, open: openDeleteDialog, close: closeDeleteDialog } = useDisclosure()
+  const [isCopied, setIsCopied] = useState(false)
+
+  const handleCopyContent = async () => {
+    if (!note) return
+    try {
+      await navigator.clipboard.writeText(note.content)
+      setIsCopied(true)
+      toast.success('本文をコピーしました')
+      setTimeout(() => setIsCopied(false), 2000)
+    } catch {
+      toast.error('コピーに失敗しました')
+    }
+  }
 
   const handleSubmit = async (values: NoteFormValues) => {
     await mutateAsync(values)
@@ -47,6 +63,20 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
                 autoFocusContent
                 onSubmit={handleSubmit}
                 onSaveShortcut={handleSave}
+                contentLabelRight={
+                  <button
+                    type="button"
+                    className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    onClick={handleCopyContent}
+                    aria-label="本文をコピー"
+                  >
+                    {isCopied ? (
+                      <Check className="size-4" />
+                    ) : (
+                      <Copy className="size-4" />
+                    )}
+                  </button>
+                }
                 defaultValues={{
                   content: note.content,
                   title: note.title ?? '',
