@@ -5,7 +5,7 @@ import { extractFirstUrl } from '~/utils/ogp'
 
 /** ツイート引用ブロックを生成する */
 const buildTweetQuoteBlock = (info: TweetInfo): string => {
-  return `> ${info.authorName} (@${info.screenName})\n> ${info.text}`
+  return `> ${info.text}\n> - ${info.authorName} (@${info.screenName})`
 }
 
 /** content 内のツイートURLの直前に引用ブロックを挿入する */
@@ -20,7 +20,7 @@ export const insertTweetQuote = async (
   // 既に引用が挿入済みならスキップ（URLの直前に引用ブロックがある）
   const escaped = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const alreadyInserted = new RegExp(
-    `> .+ \\(@\\w+\\)\\n>[^\\n]+\\n${escaped}`,
+    `> .+\\n> - .+ \\(@\\w+\\)\\n${escaped}`,
   )
   if (alreadyInserted.test(content)) {
     return { content, changed: false }

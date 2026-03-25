@@ -96,9 +96,9 @@ export const NoteCard = ({ note, onClick }: NoteCardProps) => {
               {note.title}
             </p>
           )}
-          <p className="line-clamp-10 whitespace-pre-wrap text-sm text-foreground">
+          <div className="line-clamp-10 whitespace-pre-wrap text-sm text-foreground">
             {renderContentWithLinks(note.content)}
-          </p>
+          </div>
         </CardHeader>
         <CardContent className="flex-1">
           {note.ogp && <OgpPreview ogp={note.ogp} />}

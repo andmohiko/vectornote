@@ -14,7 +14,7 @@
       "Bash(pnpm --filter @vectornote/web tsc --noEmit)",
       "Bash(firebase firestore:indexes)",
       "Bash(pnpm web build)",
-      "Bash(pnpm functions build)"
+      "Bash(pnpm functions pre-build)"
     ],
     "deny": [],
     "ask": []
