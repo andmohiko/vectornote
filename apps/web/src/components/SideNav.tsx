@@ -1,8 +1,9 @@
 import { Link, useSearch } from '@tanstack/react-router'
-import { TagIcon } from 'lucide-react'
+import { DownloadIcon, TagIcon } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -14,11 +15,13 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 import { useTags } from '@/features/tags/hooks/useTags'
+import { usePWAInstall } from '@/hooks/usePWAInstall'
 
 export const SideNav = () => {
   const { tags, isLoading } = useTags()
   const search = useSearch({ strict: false }) as { tag?: string }
   const selectedTag = search.tag ?? null
+  const { canInstall, promptInstall } = usePWAInstall()
 
   return (
     <Sidebar collapsible="icon">
@@ -67,6 +70,21 @@ export const SideNav = () => {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      {canInstall && (
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={promptInstall}
+                tooltip="アプリをインストール"
+              >
+                <DownloadIcon />
+                <span>アプリをインストール</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      )}
       <SidebarRail />
     </Sidebar>
   )
