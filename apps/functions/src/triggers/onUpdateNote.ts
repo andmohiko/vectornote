@@ -13,6 +13,7 @@ import { serverTimestamp } from '~/lib/firebase'
 import { getOpenAIClient } from '~/lib/openai'
 import { buildEmbeddingText } from '~/utils/embedding'
 import { extractFirstUrl, fetchOgp } from '~/utils/ogp'
+import { insertTweetQuote } from '~/utils/tweetQuote'
 import { triggerOnce } from '~/utils/triggerOnce'
 
 export const onUpdateNote = onDocumentUpdated(
@@ -23,25 +24,44 @@ export const onUpdateNote = onDocumentUpdated(
 
     if (!before || !after) return
 
+    // トリガーによる更新なら再処理をスキップ（再トリガー防止）
+    if (after.updatedBy === 'trigger') return
+
     const { uid, noteId } = event.params
 
-    // content が変更された場合のみ OGP を再取得（ogp書き戻しによる再トリガー防止）
+    // content が変更された場合のみ OGP を再取得 + ツイート引用挿入
     let ogp = after.ogp ?? null
+    let currentContent = after.content as string
     if (before.content !== after.content) {
       const url = extractFirstUrl(after.content)
 
       try {
         ogp = url ? await fetchOgp(url) : null
-        const dto: UpdateNoteDtoFromAdmin = { ogp, updatedAt: serverTimestamp }
-        await updateNoteOperation(uid, noteId, dto)
       } catch (error) {
         console.error('OGP re-fetch failed for note:', noteId, error)
       }
+
+      // ツイート引用挿入
+      try {
+        const result = await insertTweetQuote(currentContent)
+        currentContent = result.content
+      } catch (error) {
+        console.error('Tweet quote insertion failed for note:', noteId, error)
+      }
+
+      // OGP + content + updatedBy をまとめて更新
+      const contentChanged = currentContent !== after.content
+      const updateDto: UpdateNoteDtoFromAdmin = {
+        ogp,
+        ...(contentChanged && { content: currentContent }),
+        updatedBy: 'trigger',
+        updatedAt: serverTimestamp,
+      }
+      await updateNoteOperation(uid, noteId, updateDto)
     }
 
     // title / content / keywords / tags のいずれかが変更された場合に embedding を再生成
-    // embedding フィールド自体の更新では再トリガーしないよう制御
-    const contentChanged =
+    const fieldsChanged =
       before.title !== after.title ||
       before.content !== after.content ||
       before.keywords !== after.keywords ||
@@ -97,11 +117,12 @@ export const onUpdateNote = onDocumentUpdated(
       }
     }
 
-    if (!contentChanged) return
+    if (!fieldsChanged) return
 
+    // embedding生成（挿入後の content を使用）
     const embeddingText = buildEmbeddingText(
       after.title,
-      after.content,
+      currentContent,
       after.keywords,
       after.tags,
       ogp?.title,
@@ -117,6 +138,7 @@ export const onUpdateNote = onDocumentUpdated(
       const embedding = response.data[0].embedding
       const dto: UpdateNoteDtoFromAdmin = {
         embedding: FieldValue.vector(embedding),
+        updatedBy: 'trigger',
         updatedAt: serverTimestamp,
       }
       await updateNoteOperation(uid, noteId, dto)
