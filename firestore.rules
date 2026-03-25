@@ -27,9 +27,10 @@ service cloud.firestore {
 
     // Note のスキーマバリデーション
     function isValidNoteSchema(requestData) {
-      return requestData.size() == 8
+      return requestData.size() == 9
         && 'createdAt' in requestData && requestData.createdAt is timestamp
         && 'updatedAt' in requestData && requestData.updatedAt is timestamp
+        && 'updatedBy' in requestData && requestData.updatedBy is string
         && 'content' in requestData && requestData.content is string
         && 'embedding' in requestData
         && 'ogp' in requestData && (requestData.ogp is map || requestData.ogp == null)

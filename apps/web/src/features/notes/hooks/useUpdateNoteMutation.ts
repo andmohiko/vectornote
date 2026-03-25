@@ -21,6 +21,7 @@ export const useUpdateNoteMutation = (noteId: string) => {
         keywords: values.keywords ?? '',
         tags: values.tags || [],
         updatedAt: serverTimestamp,
+        updatedBy: 'user' as const,
       }
 
       await updateNoteOperation(uid, noteId, dto)
