@@ -37,6 +37,7 @@
 - tags: Array<String> メモのジャンル分け用のタグ
 - title: String メモのタイトル（任意）
 - updatedAt: Timestamp 更新日時
+- updatedBy: String ('trigger' | 'user') アップデートの操作主
 
 ## tags
 
