@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import type { Template } from '@vectornote/common'
 import { FileText } from 'lucide-react'
 
@@ -25,6 +25,21 @@ export const CreateNoteModal = ({ open, onClose }: CreateNoteModalProps) => {
   const { mutateAsync, isPending } = useCreateNoteMutation()
   const [formKey, setFormKey] = useState(0)
   const [templateDefaults, setTemplateDefaults] = useState<Partial<NoteFormValues>>()
+  const isDirtyRef = useRef(false)
+
+  const handleDirtyChange = useCallback((isDirty: boolean) => {
+    isDirtyRef.current = isDirty
+  }, [])
+
+  const handleClose = useCallback(() => {
+    if (isDirtyRef.current) {
+      if (!window.confirm('編集内容が保存されていません。閉じてもよろしいですか？')) {
+        return
+      }
+    }
+    isDirtyRef.current = false
+    onClose()
+  }, [onClose])
   const {
     isOpen: isTemplateSelectOpen,
     open: openTemplateSelect,
@@ -33,6 +48,7 @@ export const CreateNoteModal = ({ open, onClose }: CreateNoteModalProps) => {
 
   const handleSubmit = async (values: NoteFormValues) => {
     await mutateAsync(values)
+    isDirtyRef.current = false
     onClose()
   }
 
@@ -53,6 +69,7 @@ export const CreateNoteModal = ({ open, onClose }: CreateNoteModalProps) => {
     // フォームを再マウントしてから本文テキストエリアにフォーカスする
     setFormKey((k) => k + 1)
     setTemplateDefaults(undefined)
+    isDirtyRef.current = false
     setTimeout(() => {
       document.getElementById('content')?.focus()
     }, 0)
@@ -60,7 +77,7 @@ export const CreateNoteModal = ({ open, onClose }: CreateNoteModalProps) => {
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent
           className="flex h-full max-h-[700px] w-full max-w-[800px] flex-col overflow-hidden sm:max-w-[800px]"
           onOpenAutoFocus={handleOpenAutoFocus}
@@ -77,6 +94,7 @@ export const CreateNoteModal = ({ open, onClose }: CreateNoteModalProps) => {
               submitLabel="作成"
               isPending={isPending}
               defaultValues={templateDefaults}
+              onDirtyChange={handleDirtyChange}
               footerLeft={
                 <Button
                   type="button"

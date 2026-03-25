@@ -15,6 +15,9 @@ export type OgpInfo = {
   image: string | null
 }
 
+/** ドキュメント更新の操作主 */
+export type UpdatedBy = 'trigger' | 'user'
+
 /** Entity型（Firestoreから取得したデータ、Date変換済み） */
 export type Note = {
   noteId: NoteId
@@ -26,6 +29,7 @@ export type Note = {
   tags: string[]
   title: string | null
   updatedAt: Date
+  updatedBy: UpdatedBy
 }
 
 /** 作成用DTO */
@@ -42,13 +46,16 @@ export type UpdateNoteDto = {
   tags?: Note['tags']
   title?: Note['title']
   updatedAt: FieldValue
+  updatedBy?: UpdatedBy
 }
 
 /** firebase-admin を使用した更新用DTO */
 export type UpdateNoteDtoFromAdmin = {
+  content?: Note['content']
   embedding?: AdminFieldValue
   ogp?: Note['ogp']
   updatedAt: AdminFieldValue
+  updatedBy?: UpdatedBy
 }
 
 /** 検索結果型 */

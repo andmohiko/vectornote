@@ -25,6 +25,7 @@ export const useCreateNoteMutation = () => {
         ogp: null,
         createdAt: serverTimestamp,
         updatedAt: serverTimestamp,
+        updatedBy: 'user' as const,
       }
 
       await createNoteOperation(uid, dto)

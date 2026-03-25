@@ -12,6 +12,7 @@ import { serverTimestamp } from '~/lib/firebase'
 import { getOpenAIClient } from '~/lib/openai'
 import { buildEmbeddingText } from '~/utils/embedding'
 import { extractFirstUrl, fetchOgp } from '~/utils/ogp'
+import { insertTweetQuote } from '~/utils/tweetQuote'
 import { triggerOnce } from '~/utils/triggerOnce'
 
 export const onCreateNote = onDocumentCreated(
@@ -28,15 +29,32 @@ export const onCreateNote = onDocumentCreated(
     if (url) {
       try {
         ogp = await fetchOgp(url)
-        const dto: UpdateNoteDtoFromAdmin = { ogp, updatedAt: serverTimestamp }
-        await updateNoteOperation(uid, noteId, dto)
       } catch (error) {
         console.error('OGP fetch failed for note:', noteId, error)
       }
     }
 
-    // embedding生成（OGPのtitle/descriptionも含める）
-    const embeddingText = buildEmbeddingText(title, content, keywords, tags, ogp?.title, ogp?.description)
+    // ツイート引用挿入
+    let currentContent = content as string
+    try {
+      const result = await insertTweetQuote(currentContent)
+      currentContent = result.content
+    } catch (error) {
+      console.error('Tweet quote insertion failed for note:', noteId, error)
+    }
+
+    // OGP + content + updatedBy をまとめて更新
+    const contentChanged = currentContent !== content
+    const updateDto: UpdateNoteDtoFromAdmin = {
+      ...(ogp !== null && { ogp }),
+      ...(contentChanged && { content: currentContent }),
+      updatedBy: 'trigger',
+      updatedAt: serverTimestamp,
+    }
+    await updateNoteOperation(uid, noteId, updateDto)
+
+    // embedding生成（挿入後の content を使用）
+    const embeddingText = buildEmbeddingText(title, currentContent, keywords, tags, ogp?.title, ogp?.description)
     if (!embeddingText.trim()) return
 
     try {
@@ -47,6 +65,7 @@ export const onCreateNote = onDocumentCreated(
       const embedding = response.data[0].embedding
       const dto: UpdateNoteDtoFromAdmin = {
         embedding: FieldValue.vector(embedding),
+        updatedBy: 'trigger',
         updatedAt: serverTimestamp,
       }
       await updateNoteOperation(uid, noteId, dto)

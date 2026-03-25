@@ -6,7 +6,8 @@ import { OgpPreview } from './OgpPreview'
 
 const URL_REGEX = /https?:\/\/[^\s]+/g
 
-const renderContentWithLinks = (text: string) => {
+/** テキスト内のURLをリンクに変換する */
+const renderTextWithLinks = (text: string, keyPrefix: string) => {
   const parts = text.split(URL_REGEX)
   const matches = text.match(URL_REGEX) ?? []
 
@@ -15,7 +16,7 @@ const renderContentWithLinks = (text: string) => {
       return [
         part,
         <a
-          key={i}
+          key={`${keyPrefix}-${i.toString()}`}
           href={matches[i]}
           target="_blank"
           rel="noopener noreferrer"
@@ -28,6 +29,50 @@ const renderContentWithLinks = (text: string) => {
     }
     return [part]
   })
+}
+
+/** content を行単位で処理し、引用ブロックとそれ以外を分けて表示する */
+const renderContentWithLinks = (text: string) => {
+  const lines = text.split('\n')
+  const elements: React.ReactNode[] = []
+  let quoteLines: string[] = []
+  let blockIndex = 0
+
+  const flushQuote = () => {
+    if (quoteLines.length === 0) return
+    elements.push(
+      <blockquote
+        key={`quote-${blockIndex++}`}
+        className="my-2 border-l-2 border-muted-foreground/40 pl-3 text-muted-foreground"
+      >
+        {quoteLines.map((line, i) => (
+          <span key={i}>
+            {i > 0 && '\n'}
+            {renderTextWithLinks(line, `q-${blockIndex}-${i}`)}
+          </span>
+        ))}
+      </blockquote>,
+    )
+    quoteLines = []
+  }
+
+  for (const line of lines) {
+    if (line.startsWith('> ')) {
+      quoteLines.push(line.slice(2))
+    } else {
+      const wasQuote = quoteLines.length > 0
+      flushQuote()
+      elements.push(
+        <span key={`line-${blockIndex++}`}>
+          {elements.length > 0 && !wasQuote && '\n'}
+          {renderTextWithLinks(line, `l-${blockIndex}`)}
+        </span>,
+      )
+    }
+  }
+  flushQuote()
+
+  return elements
 }
 
 type NoteCardProps = {
@@ -51,7 +96,9 @@ export const NoteCard = ({ note, onClick }: NoteCardProps) => {
               {note.title}
             </p>
           )}
-          <p className="line-clamp-10 whitespace-pre-wrap text-sm text-foreground">{renderContentWithLinks(note.content)}</p>
+          <div className="line-clamp-10 whitespace-pre-wrap text-sm text-foreground">
+            {renderContentWithLinks(note.content)}
+          </div>
         </CardHeader>
         <CardContent className="flex-1">
           {note.ogp && <OgpPreview ogp={note.ogp} />}
