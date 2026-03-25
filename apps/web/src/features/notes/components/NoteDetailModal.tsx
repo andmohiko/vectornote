@@ -1,6 +1,6 @@
 import type { Note } from '@vectornote/common'
 import { Check, Copy } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,6 +25,21 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
   const { mutateAsync, isPending } = useUpdateNoteMutation(note?.noteId ?? '')
   const { isOpen: deleteDialogOpen, open: openDeleteDialog, close: closeDeleteDialog } = useDisclosure()
   const [isCopied, setIsCopied] = useState(false)
+  const isDirtyRef = useRef(false)
+
+  const handleDirtyChange = useCallback((isDirty: boolean) => {
+    isDirtyRef.current = isDirty
+  }, [])
+
+  const handleClose = useCallback(() => {
+    if (isDirtyRef.current) {
+      if (!window.confirm('編集内容が保存されていません。閉じてもよろしいですか？')) {
+        return
+      }
+    }
+    isDirtyRef.current = false
+    onClose()
+  }, [onClose])
 
   const handleCopyContent = async () => {
     if (!note) return
@@ -40,16 +55,18 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
 
   const handleSubmit = async (values: NoteFormValues) => {
     await mutateAsync(values)
+    isDirtyRef.current = false
     onClose()
   }
 
   const handleSave = async (values: NoteFormValues) => {
     await mutateAsync(values)
+    isDirtyRef.current = false
   }
 
   return (
     <>
-      <Dialog open={!!note} onOpenChange={(open) => !open && onClose()}>
+      <Dialog open={!!note} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent className="flex h-full max-h-[700px] w-full max-w-[800px] flex-col overflow-hidden sm:max-w-[800px]">
           {note && (
             <>
@@ -63,6 +80,7 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
                 autoFocusContent
                 onSubmit={handleSubmit}
                 onSaveShortcut={handleSave}
+                onDirtyChange={handleDirtyChange}
                 contentLabelRight={
                   <button
                     type="button"

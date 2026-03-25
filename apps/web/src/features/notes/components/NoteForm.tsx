@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { X } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
 import { Badge } from '@/components/ui/badge'
@@ -26,6 +26,7 @@ type NoteFormProps = {
   contentLabelRight?: React.ReactNode
   expandContent?: boolean
   autoFocusContent?: boolean
+  onDirtyChange?: (isDirty: boolean) => void
 }
 
 export const NoteForm = ({
@@ -39,6 +40,7 @@ export const NoteForm = ({
   contentLabelRight,
   expandContent = false,
   autoFocusContent = false,
+  onDirtyChange,
 }: NoteFormProps) => {
   const {
     register,
@@ -47,7 +49,7 @@ export const NoteForm = ({
     watch,
     setValue,
     control,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<NoteFormValues>({
     resolver: zodResolver(noteFormSchema),
     mode: 'all',
@@ -67,6 +69,10 @@ export const NoteForm = ({
   }, [handleSubmit, onSaveShortcut])
 
   useSaveShortcut(handleSaveShortcut, !!onSaveShortcut)
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty)
+  }, [isDirty, onDirtyChange])
 
   const tags = watch('tags') ?? []
 
