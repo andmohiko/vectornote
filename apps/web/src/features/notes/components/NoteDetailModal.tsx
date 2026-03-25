@@ -27,6 +27,10 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
     onClose()
   }
 
+  const handleSave = async (values: NoteFormValues) => {
+    await mutateAsync(values)
+  }
+
   return (
     <>
       <Dialog open={!!note} onOpenChange={(open) => !open && onClose()}>
@@ -42,6 +46,7 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
                 expandContent
                 autoFocusContent
                 onSubmit={handleSubmit}
+                onSaveShortcut={handleSave}
                 defaultValues={{
                   content: note.content,
                   title: note.title ?? '',

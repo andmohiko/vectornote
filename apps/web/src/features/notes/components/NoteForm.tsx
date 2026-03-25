@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { X } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
 import { Badge } from '@/components/ui/badge'
@@ -11,11 +11,13 @@ import { Label } from '@/components/ui/label'
 import { MarkdownEditor } from '@/components/ui/markdown-editor'
 import { Spinner } from '@/components/ui/spinner'
 import { TagSuggestionDropdown } from '@/features/tags/components/TagSuggestionDropdown'
+import { useSaveShortcut } from '../hooks/useSaveShortcut'
 import type { NoteFormValues } from '../schemas/noteSchema'
 import { noteFormSchema } from '../schemas/noteSchema'
 
 type NoteFormProps = {
   onSubmit: (values: NoteFormValues) => void | Promise<void>
+  onSaveShortcut?: (values: NoteFormValues) => void | Promise<void>
   defaultValues?: Partial<NoteFormValues>
   submitLabel?: string
   isPending?: boolean
@@ -27,6 +29,7 @@ type NoteFormProps = {
 
 export const NoteForm = ({
   onSubmit,
+  onSaveShortcut,
   defaultValues,
   submitLabel = '保存',
   isPending = false,
@@ -54,6 +57,14 @@ export const NoteForm = ({
       ...defaultValues,
     },
   })
+
+  const handleSaveShortcut = useCallback(() => {
+    if (onSaveShortcut) {
+      handleSubmit(onSaveShortcut)()
+    }
+  }, [handleSubmit, onSaveShortcut])
+
+  useSaveShortcut(handleSaveShortcut, !!onSaveShortcut)
 
   const tags = watch('tags') ?? []
 
