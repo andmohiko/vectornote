@@ -20,7 +20,7 @@ export const insertTweetQuote = async (
   // 既に引用が挿入済みならスキップ（URLの直前に引用ブロックがある）
   const escaped = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const alreadyInserted = new RegExp(
-    `> .+ \\(@\\w+\\)\\n>[^\\n]+\\n\\n${escaped}`,
+    `> .+ \\(@\\w+\\)\\n>[^\\n]+\\n${escaped}`,
   )
   if (alreadyInserted.test(content)) {
     return { content, changed: false }
@@ -32,6 +32,6 @@ export const insertTweetQuote = async (
   }
 
   const quoteBlock = buildTweetQuoteBlock(info)
-  const updatedContent = content.replace(url, `${quoteBlock}\n\n${url}`)
+  const updatedContent = content.replace(url, `${quoteBlock}\n${url}`)
   return { content: updatedContent, changed: true }
 }
