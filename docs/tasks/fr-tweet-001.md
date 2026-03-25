@@ -2,29 +2,11 @@
 
 ## Context
 
-メモ作成・編集時に Twitter/X のツイートURLを本文に貼り付けた際、ツイートの本文テキストを自動的にメモ本文に挿入する機能を実装する。
+メモ作成・編集時に Twitter/X のツイートURLを本文に貼り付けた際、Cloud Functions トリガー内で oEmbed API からアカウント名(@screen_name)とツイート本文を取得し、メモの content に Markdown 引用形式で自動挿入する機能を実装する。
 
-現状、URLを貼ると Cloud Functions の `onCreateNote` / `onUpdateNote` トリガーで OGP 情報（タイトル・説明・画像）を取得しているが、Twitter/X の OGP ではツイート本文が十分に取得できない。Twitter の oEmbed API（`publish.twitter.com/oembed`）を利用することで、認証不要でツイート本文を取得できる。
+OGP 情報は従来通り HTML メタタグから取得する（ツイートURLでも変わらない）。oEmbed API はツイート本文+アカウント名の取得にのみ使用する。
 
-## 方針
-
-### アプローチ: Cloud Functions（サーバーサイド）で処理
-
-ツイート本文の取得は既存の OGP 取得フローに組み込み、Cloud Functions 側で実行する。
-
-**理由:**
-- 既存の `fetchOgp` と同じレイヤーで処理でき、アーキテクチャの一貫性を保てる
-- oEmbed API はサーバーサイドから呼ぶのが適切（CORS の問題を回避）
-- フロントエンドの変更を最小限に抑えられる
-
-### ツイート本文の格納先
-
-OGP の `description` フィールドにツイート本文を格納する。
-
-**理由:**
-- 既存の `OgpInfo` 型を変更せずに対応できる
-- OgpPreview コンポーネントで `description` として表示される
-- embedding 生成時にも `ogpDescription` として検索対象に含まれる
+再トリガー防止のために `updatedBy` フィールドを Note に導入し、トリガーによる content 書き換えが無限ループしないようにする。
 
 ### 使用API: Twitter oEmbed API
 
@@ -34,7 +16,18 @@ GET https://publish.twitter.com/oembed?url={TWEET_URL}&omit_script=true
 
 - 認証不要・無料
 - レスポンスの `html` フィールド内の `<blockquote>` > `<p>` タグからツイート本文を抽出
-- `author_name` フィールドからユーザー表示名を取得可能
+- `author_url` フィールドからスクリーンネームを抽出
+
+### ツイート引用の挿入フォーマット
+
+ツイートURLの直前に Markdown 引用ブロックを挿入する:
+
+```
+> ユーザー名 (@screen_name)
+> ツイート本文がここに入る
+
+https://x.com/screen_name/status/123456789
+```
 
 ## 前提条件
 
@@ -45,20 +38,63 @@ GET https://publish.twitter.com/oembed?url={TWEET_URL}&omit_script=true
 
 | タスク | ステータス |
 |--------|-----------|
-| Task 1: Twitter URL 判定ユーティリティの追加 | 未着手 |
-| Task 2: oEmbed API によるツイート情報取得関数の実装 | 未着手 |
-| Task 3: OGP 取得フローへの統合 | 未着手 |
-| Task 4: フロントエンドでのツイート表示対応（任意） | 未着手 |
+| Step 1: `updatedBy` 型定義と Note 型への追加 | 未着手 |
+| Step 2: Firestore Security Rules 更新 | 未着手 |
+| Step 3: Twitter URL 判定ユーティリティ作成 | 未着手 |
+| Step 4: oEmbed API によるツイート情報取得関数の実装 | 未着手 |
+| Step 5: ツイート引用挿入ユーティリティ作成 | 未着手 |
+| Step 6: `onCreateNote.ts` 修正 | 未着手 |
+| Step 7: `onUpdateNote.ts` 修正 | 未着手 |
+| Step 8: フロントエンド修正 | 未着手 |
+
+---
+
+## 変更ファイル一覧
+
+| ファイル | 変更種別 |
+|---|---|
+| `packages/common/src/entities/Note.ts` | 修正: `UpdatedBy` 型追加、`updatedBy` フィールド追加 |
+| `packages/common/src/utils/twitter.ts` | 新規: `isTweetUrl`, `extractTweetId` |
+| `packages/common/src/utils/index.ts` | 新規: re-export |
+| `packages/common/src/index.ts` | 修正: `utils` の re-export 追加 |
+| `firestore.rules` | 修正: `isValidNoteSchema` に `updatedBy` 追加 |
+| `apps/functions/src/lib/twitter.ts` | 新規: `fetchTweetInfo` (oEmbed API 呼び出し) |
+| `apps/functions/src/utils/tweetQuote.ts` | 新規: ツイート引用挿入ロジック |
+| `apps/functions/src/triggers/onCreateNote.ts` | 修正: 引用挿入 + `updatedBy` 対応 |
+| `apps/functions/src/triggers/onUpdateNote.ts` | 修正: 再トリガー防止 + 引用挿入 |
+| `apps/web/src/features/notes/hooks/useCreateNoteMutation.ts` | 修正: `updatedBy: 'user'` 追加 |
+| `apps/web/src/features/notes/hooks/useUpdateNoteMutation.ts` | 修正: `updatedBy: 'user'` 追加 |
 
 ---
 
 ## 実装タスク
 
-### Task 1: Twitter URL 判定ユーティリティの追加
+### Step 1: `updatedBy` 型定義と Note 型への追加
 
-**ファイル:** `apps/functions/src/utils/twitter.ts`（新規）
+**ファイル:** `packages/common/src/entities/Note.ts`
 
-Twitter/X のツイートURLかどうかを判定し、URLを正規化する。
+`UpdatedBy` を単独の型として定義し、Note および DTO から参照する。
+
+```typescript
+/** ドキュメント更新の操作主 */
+export type UpdatedBy = 'trigger' | 'user'
+```
+
+- `Note` 型に `updatedBy: UpdatedBy` フィールドを追加
+- `CreateNoteDto` は `Omit` で生成されているため自動的に含まれる
+- `UpdateNoteDto` に `updatedBy?: UpdatedBy` を追加
+- `UpdateNoteDtoFromAdmin` に `content?: Note['content']` と `updatedBy?: UpdatedBy` を追加
+
+### Step 2: Firestore Security Rules 更新
+
+**ファイル:** `firestore.rules`
+
+- `isValidNoteSchema` の `requestData.size()` を `8` → `9` に変更
+- `'updatedBy' in requestData && requestData.updatedBy is string` を追加
+
+### Step 3: Twitter URL 判定ユーティリティ作成
+
+**ファイル:** `packages/common/src/utils/twitter.ts`（新規）
 
 ```typescript
 /** Twitter/X のツイートURLパターン */
@@ -77,6 +113,19 @@ export const extractTweetId = (url: string): string | null => {
 }
 ```
 
+**ファイル:** `packages/common/src/utils/index.ts`（新規）
+
+```typescript
+export { extractTweetId, isTweetUrl } from './twitter'
+```
+
+**ファイル:** `packages/common/src/index.ts`（修正）
+
+```typescript
+export * from './entities'
+export * from './utils'
+```
+
 **対応URLパターン:**
 - `https://twitter.com/{username}/status/{tweet_id}`
 - `https://x.com/{username}/status/{tweet_id}`
@@ -84,15 +133,11 @@ export const extractTweetId = (url: string): string | null => {
 - `https://www.x.com/{username}/status/{tweet_id}`
 - クエリパラメータ付き（`?s=20` 等）も対応
 
-### Task 2: oEmbed API によるツイート情報取得関数の実装
+### Step 4: oEmbed API によるツイート情報取得関数の実装
 
-**ファイル:** `apps/functions/src/utils/twitter.ts`（Task 1 に追記）
-
-oEmbed API を呼び出し、ツイート本文と著者名を取得する。
+**ファイル:** `apps/functions/src/lib/twitter.ts`（新規）
 
 ```typescript
-import type { OgpInfo } from '@vectornote/common'
-
 type TweetOembedResponse = {
   html: string
   author_name: string
@@ -100,28 +145,35 @@ type TweetOembedResponse = {
   url: string
 }
 
+export type TweetInfo = {
+  authorName: string
+  screenName: string
+  text: string
+}
+
 /** oEmbed レスポンスの HTML からツイート本文を抽出する */
 const extractTweetText = (html: string): string | null => {
-  // <blockquote> 内の <p> タグからテキストを抽出
   const pMatch = html.match(/<p[^>]*>([\s\S]*?)<\/p>/)
   if (!pMatch) return null
 
-  return (
-    pMatch[1]
-      // HTMLタグを除去
-      .replace(/<[^>]+>/g, '')
-      // HTMLエンティティをデコード
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .trim()
-  )
+  return pMatch[1]
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim()
 }
 
-/** Twitter oEmbed API を使用してツイート情報を OgpInfo として取得する */
-export const fetchTweetAsOgp = async (url: string): Promise<OgpInfo> => {
+/** author_url からスクリーンネームを抽出する */
+const extractScreenName = (authorUrl: string): string | null => {
+  const match = authorUrl.match(/https?:\/\/(?:twitter\.com|x\.com)\/(\w+)/)
+  return match ? match[1] : null
+}
+
+/** Twitter oEmbed API を使用してツイート情報を取得する */
+export const fetchTweetInfo = async (url: string): Promise<TweetInfo | null> => {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 5000)
 
@@ -131,21 +183,17 @@ export const fetchTweetAsOgp = async (url: string): Promise<OgpInfo> => {
       signal: controller.signal,
     })
 
-    if (!response.ok) {
-      return { url, title: null, description: null, image: null }
-    }
+    if (!response.ok) return null
 
     const data = (await response.json()) as TweetOembedResponse
-    const tweetText = extractTweetText(data.html)
+    const screenName = extractScreenName(data.author_url)
+    const text = extractTweetText(data.html)
 
-    return {
-      url,
-      title: data.author_name ?? null,
-      description: tweetText,
-      image: null,
-    }
+    if (!screenName || !text) return null
+
+    return { authorName: data.author_name, screenName, text }
   } catch {
-    return { url, title: null, description: null, image: null }
+    return null
   } finally {
     clearTimeout(timeoutId)
   }
@@ -162,94 +210,89 @@ export const fetchTweetAsOgp = async (url: string): Promise<OgpInfo> => {
 }
 ```
 
-**OgpInfo へのマッピング:**
-| OgpInfo フィールド | 値 |
-|---|---|
-| `url` | 元のツイートURL |
-| `title` | `author_name`（ユーザー表示名） |
-| `description` | `<p>` タグから抽出したツイート本文 |
-| `image` | `null`（oEmbed API では画像URLを取得できない） |
+### Step 5: ツイート引用挿入ユーティリティ作成
 
-### Task 3: OGP 取得フローへの統合
-
-**ファイル:** `apps/functions/src/utils/ogp.ts`（修正）
-
-既存の `fetchOgp` を呼ぶ前に Twitter URL かどうかを判定し、ツイートURLの場合は `fetchTweetAsOgp` を使用する。
+**ファイル:** `apps/functions/src/utils/tweetQuote.ts`（新規）
 
 ```typescript
-// ogp.ts に追加するインポートと関数
+import { isTweetUrl } from '@vectornote/common'
+import type { TweetInfo } from '~/lib/twitter'
+import { fetchTweetInfo } from '~/lib/twitter'
+import { extractFirstUrl } from '~/utils/ogp'
 
-import { isTweetUrl, fetchTweetAsOgp } from '~/utils/twitter'
+/** ツイート引用ブロックを生成する */
+const buildTweetQuoteBlock = (info: TweetInfo): string => {
+  return `> ${info.authorName} (@${info.screenName})\n> ${info.text}`
+}
 
-/** URLの種類に応じて適切な方法で OGP 情報を取得する */
-export const fetchOgpAuto = async (url: string): Promise<OgpInfo> => {
-  if (isTweetUrl(url)) {
-    return fetchTweetAsOgp(url)
+/** content 内のツイートURLの直前に引用ブロックを挿入する */
+export const insertTweetQuote = async (
+  content: string,
+): Promise<{ content: string; changed: boolean }> => {
+  const url = extractFirstUrl(content)
+  if (!url || !isTweetUrl(url)) {
+    return { content, changed: false }
   }
-  return fetchOgp(url)
+
+  // 既に引用が挿入済みならスキップ（URLの直前に引用ブロックがある）
+  const escaped = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const alreadyInserted = new RegExp(`> .+ \\(@\\w+\\)\\n>[^\\n]+\\n\\n${escaped}`)
+  if (alreadyInserted.test(content)) {
+    return { content, changed: false }
+  }
+
+  const info = await fetchTweetInfo(url)
+  if (!info) {
+    return { content, changed: false }
+  }
+
+  const quoteBlock = buildTweetQuoteBlock(info)
+  const updatedContent = content.replace(url, `${quoteBlock}\n\n${url}`)
+  return { content: updatedContent, changed: true }
 }
 ```
 
-**ファイル:** `apps/functions/src/triggers/onCreateNote.ts`（修正）
-**ファイル:** `apps/functions/src/triggers/onUpdateNote.ts`（修正）
+### Step 6: `onCreateNote.ts` 修正
 
-トリガー関数内で `fetchOgp` を呼んでいる箇所を `fetchOgpAuto` に置き換える。
+**ファイル:** `apps/functions/src/triggers/onCreateNote.ts`
 
-```diff
-- import { extractFirstUrl, fetchOgp } from '~/utils/ogp'
-+ import { extractFirstUrl, fetchOgpAuto } from '~/utils/ogp'
+処理フロー:
+1. OGP取得（従来通り `fetchOgp`）
+2. ツイート引用挿入（`insertTweetQuote`）
+3. OGP + content + `updatedBy: 'trigger'` で Note 更新
+4. embedding生成（挿入後の content を使用）
 
-- const ogp = await fetchOgp(url)
-+ const ogp = await fetchOgpAuto(url)
-```
+### Step 7: `onUpdateNote.ts` 修正
 
-### Task 4: フロントエンドでのツイート表示対応（任意）
+**ファイル:** `apps/functions/src/triggers/onUpdateNote.ts`
 
-**ファイル:** `apps/web/src/features/notes/components/OgpPreview.tsx`（修正）
+処理フロー:
+1. **先頭で** `after.updatedBy === 'trigger'` ならスキップ（再トリガー防止）
+2. content 変更時: OGP再取得 + ツイート引用挿入
+3. `updatedBy: 'trigger'` で Note 更新
+4. embedding再生成（挿入後の content を使用）
 
-現状の `OgpPreview` コンポーネントはそのままでも `title`（著者名）と `description`（ツイート本文）を表示するため、基本的な表示は変更不要。
+### Step 8: フロントエンド修正
 
-ただし、ツイートであることを視覚的に区別したい場合は以下の対応を行う。
+**ファイル:** `apps/web/src/features/notes/hooks/useCreateNoteMutation.ts`
+**ファイル:** `apps/web/src/features/notes/hooks/useUpdateNoteMutation.ts`
 
-```typescript
-// ツイートURLかどうかの判定（フロントエンド用）
-const isTweetUrl = (url: string): boolean =>
-  /^https?:\/\/(?:www\.)?(?:twitter\.com|x\.com)\/\w+\/status\/\d+/.test(url)
-```
-
-表示例:
-- ツイートURLの場合、OgpPreview に Twitter/X アイコンやラベルを追加
-- `image` が `null` のため、画像なしレイアウトで表示される
-
-**優先度:** 低（既存の OgpPreview で十分表示可能なため）
+- `useCreateNoteMutation.ts`: dto に `updatedBy: 'user' as const` を追加
+- `useUpdateNoteMutation.ts`: dto に `updatedBy: 'user' as const` を追加
 
 ---
-
-## 実装順序
-
-1. Task 1（Twitter URL 判定）→ 基盤ユーティリティ
-2. Task 2（oEmbed 取得関数）→ ツイート取得ロジック
-3. Task 3（OGP フロー統合）→ 既存トリガーとの接続
-4. Task 4（フロント表示対応）→ 任意の UI 改善
-
-## 影響範囲
-
-| 対象 | 変更内容 |
-|------|---------|
-| `apps/functions/src/utils/twitter.ts` | 新規作成 |
-| `apps/functions/src/utils/ogp.ts` | `fetchOgpAuto` 関数を追加 |
-| `apps/functions/src/triggers/onCreateNote.ts` | `fetchOgp` → `fetchOgpAuto` に変更 |
-| `apps/functions/src/triggers/onUpdateNote.ts` | `fetchOgp` → `fetchOgpAuto` に変更 |
-| `apps/web/src/features/notes/components/OgpPreview.tsx` | （任意）ツイート表示の最適化 |
 
 ## 検証方法
 
 1. メモ本文に `https://x.com/username/status/123456789` 形式のURLを含めてメモを作成する
-2. Firestore コンソールで `ogp` フィールドに以下が保存されていることを確認:
-   - `title`: ツイート著者名
-   - `description`: ツイート本文テキスト
-   - `image`: `null`
-3. OgpPreview コンポーネントでツイート著者名と本文が表示されることを確認
-4. 通常のURL（Twitter以外）では従来通り OGP 情報が取得されることを確認
-5. 削除済みツイートや保護アカウントのURLの場合、エラーにならず空の OGP 情報が保存されることを確認
-6. メモ編集でツイートURLを追加・変更した場合も正しく取得されることを確認
+2. Firestore コンソールで以下を確認:
+   - `content` にツイート引用ブロック（`> ユーザー名 (@screen_name)\n> 本文`）が挿入されていること
+   - `ogp` フィールドに従来通り OGP 情報が保存されていること
+   - `updatedBy` が `'trigger'` になっていること
+3. OgpPreview コンポーネントで OGP 情報が表示されることを確認
+4. 通常のURL（Twitter以外）では従来通り OGP 情報のみが取得されることを確認
+5. 削除済みツイートや保護アカウントのURLの場合、エラーにならず OGP のみ保存されることを確認
+6. メモ編集でツイートURLを追加した場合も正しく引用が挿入されることを確認
+7. トリガーによる content 書き換え後に再トリガーが発火しないことを確認（`updatedBy: 'trigger'` でスキップ）
+8. `pnpm functions pre-build` でビルド確認
+9. `pnpm web build` でフロントエンドビルド確認
