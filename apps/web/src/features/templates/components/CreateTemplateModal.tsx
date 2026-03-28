@@ -27,7 +27,7 @@ export const CreateTemplateModal = ({
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex h-full max-h-[700px] w-full max-w-[800px] flex-col overflow-hidden sm:max-w-[800px]">
+      <DialogContent className="flex h-full max-h-[90dvh] w-full max-w-[800px] flex-col overflow-hidden sm:max-h-[700px] sm:max-w-[800px]">
         <DialogHeader className="shrink-0">
           <DialogTitle>テンプレートを作成</DialogTitle>
           <DialogDescription className="sr-only">新しいテンプレートを作成します</DialogDescription>

@@ -67,7 +67,7 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
   return (
     <>
       <Dialog open={!!note} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="flex h-full max-h-[700px] w-full max-w-[800px] flex-col overflow-hidden sm:max-w-[800px]">
+        <DialogContent className="flex h-full max-h-[90dvh] w-full max-w-[800px] flex-col overflow-hidden sm:max-h-[700px] sm:max-w-[800px]">
           {note && (
             <>
               <DialogHeader className="shrink-0">

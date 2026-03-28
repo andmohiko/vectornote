@@ -79,7 +79,7 @@ export const CreateNoteModal = ({ open, onClose }: CreateNoteModalProps) => {
     <>
       <Dialog open={open} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent
-          className="flex h-full max-h-[700px] w-full max-w-[800px] flex-col overflow-hidden sm:max-w-[800px]"
+          className="flex h-full max-h-[90dvh] w-full max-w-[800px] flex-col overflow-hidden sm:max-h-[700px] sm:max-w-[800px]"
           onOpenAutoFocus={handleOpenAutoFocus}
         >
           <DialogHeader className="shrink-0">
