@@ -1,4 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
+import type { Uid } from '@vectornote/common'
 import type { FirebaseError } from 'firebase/app'
 import type { User } from 'firebase/auth'
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'
@@ -12,9 +13,11 @@ import {
   useState,
 } from 'react'
 import { toast } from 'sonner'
-import type { Uid } from '@vectornote/common'
+import {
+  createUserOperation,
+  fetchUserOperation,
+} from '@/infrastructure/firestore/users'
 import { getContext } from '@/integrations/tanstack-query/root-provider'
-import { fetchUserOperation, createUserOperation } from '@/infrastructure/firestore/users'
 import { auth, serverTimestamp } from '@/lib/firebase'
 
 const SESSION_LOGIN_AT_KEY = 'auth_login_at'

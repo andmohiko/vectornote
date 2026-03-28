@@ -22,11 +22,13 @@ function HomePage() {
   }, [openCreateModal]))
 
   return (
-    <main className="pb-8 pt-14">
+    <main className="pb-8 pt-4">
       <section>
-        <h2 className="mb-4 text-lg font-semibold">
-          {tag ? `#${tag}` : 'メモ一覧'}
-        </h2>
+        {tag && (
+          <h2 className="mb-4 text-lg font-semibold">
+            #{tag}
+          </h2>
+        )}
         <NoteList tag={tag} onClickCreate={openCreateModal} />
       </section>
 
