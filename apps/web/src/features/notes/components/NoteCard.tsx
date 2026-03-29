@@ -6,6 +6,8 @@ import { OgpPreview } from './OgpPreview'
 
 const URL_REGEX = /https?:\/\/[^\s]+/g
 
+const INLINE_CODE_REGEX = /`([^`]+)`/g
+
 /** テキスト内のURLをリンクに変換する */
 const renderTextWithLinks = (text: string, keyPrefix: string) => {
   const parts = text.split(URL_REGEX)
@@ -31,11 +33,32 @@ const renderTextWithLinks = (text: string, keyPrefix: string) => {
   })
 }
 
-/** content を行単位で処理し、引用ブロックとそれ以外を分けて表示する */
+/** テキスト内のインラインコードを処理してから、URLリンクに変換する */
+const renderInlineContent = (text: string, keyPrefix: string) => {
+  const parts = text.split(INLINE_CODE_REGEX)
+  // split with capturing group: even indices are plain text, odd indices are code content
+  return parts.flatMap((part, i) => {
+    if (i % 2 === 1) {
+      return [
+        <code
+          key={`${keyPrefix}-code-${i.toString()}`}
+          className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs"
+        >
+          {part}
+        </code>,
+      ]
+    }
+    return renderTextWithLinks(part, `${keyPrefix}-${i.toString()}`)
+  })
+}
+
+/** content を行単位で処理し、コードブロック・引用ブロック・それ以外を分けて表示する */
 const renderContentWithLinks = (text: string) => {
   const lines = text.split('\n')
   const elements: React.ReactNode[] = []
   let quoteLines: string[] = []
+  let codeBlockLines: string[] = []
+  let inCodeBlock = false
   let blockIndex = 0
 
   const flushQuote = () => {
@@ -48,7 +71,7 @@ const renderContentWithLinks = (text: string) => {
         {quoteLines.map((line, i) => (
           <span key={i}>
             {i > 0 && '\n'}
-            {renderTextWithLinks(line, `q-${blockIndex}-${i}`)}
+            {renderInlineContent(line, `q-${blockIndex}-${i}`)}
           </span>
         ))}
       </blockquote>,
@@ -56,8 +79,33 @@ const renderContentWithLinks = (text: string) => {
     quoteLines = []
   }
 
+  const flushCodeBlock = () => {
+    if (codeBlockLines.length === 0) return
+    elements.push(
+      <pre
+        key={`codeblock-${blockIndex++}`}
+        className="my-2 overflow-x-auto rounded-md bg-muted p-3"
+      >
+        <code className="font-mono text-xs">{codeBlockLines.join('\n')}</code>
+      </pre>,
+    )
+    codeBlockLines = []
+  }
+
   for (const line of lines) {
-    if (line.startsWith('> ')) {
+    if (line.startsWith('```')) {
+      if (inCodeBlock) {
+        // コードブロック終了
+        inCodeBlock = false
+        flushCodeBlock()
+      } else {
+        // コードブロック開始
+        flushQuote()
+        inCodeBlock = true
+      }
+    } else if (inCodeBlock) {
+      codeBlockLines.push(line)
+    } else if (line.startsWith('> ')) {
       quoteLines.push(line.slice(2))
     } else {
       const wasQuote = quoteLines.length > 0
@@ -65,11 +113,13 @@ const renderContentWithLinks = (text: string) => {
       elements.push(
         <span key={`line-${blockIndex++}`}>
           {elements.length > 0 && !wasQuote && '\n'}
-          {renderTextWithLinks(line, `l-${blockIndex}`)}
+          {renderInlineContent(line, `l-${blockIndex}`)}
         </span>,
       )
     }
   }
+  // 閉じられていないコードブロックもフラッシュ
+  flushCodeBlock()
   flushQuote()
 
   return elements
