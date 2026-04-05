@@ -1,5 +1,6 @@
 import type { Note } from '@vectornote/common'
 import dayjs from 'dayjs'
+import { Pin } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { OgpPreview } from './OgpPreview'
@@ -163,12 +164,15 @@ export const NoteCard = ({ note, onClick }: NoteCardProps) => {
               ))}
             </div>
           )}
-          <div className="flex items-center">
+          <div className="flex w-full items-center">
             <span className="text-xs text-muted-foreground">{updatedAt}</span>
             {note.keywords && (
               <span className="ml-3 truncate text-xs text-muted-foreground">
                 {note.keywords}
               </span>
+            )}
+            {note.isPinned && (
+              <Pin className="ml-auto size-3.5 text-muted-foreground" />
             )}
           </div>
         </CardFooter>
