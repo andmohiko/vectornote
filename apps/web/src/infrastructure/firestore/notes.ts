@@ -1,29 +1,34 @@
+import type {
+  CreateNoteDto,
+  Note,
+  NoteId,
+  Uid,
+  UpdateNoteDto,
+} from '@vectornote/common'
+import { noteCollection, userCollection } from '@vectornote/common'
 import type { DocumentSnapshot, Unsubscribe } from 'firebase/firestore'
 import {
-  collection,
-  doc,
   addDoc,
+  collection,
+  deleteDoc,
+  doc,
   getDoc,
   getDocs,
-  updateDoc,
-  deleteDoc,
-  onSnapshot,
-  query,
-  orderBy,
   limit,
+  onSnapshot,
+  orderBy,
+  query,
   startAfter,
+  updateDoc,
   where,
 } from 'firebase/firestore'
-import type { CreateNoteDto, Note, NoteId, UpdateNoteDto } from '@vectornote/common'
-import { noteCollection, userCollection } from '@vectornote/common'
-import type { Uid } from '@vectornote/common'
 
 import { db } from '@/lib/firebase'
 import { convertDate } from '@/utils/convertDate'
 
 const dateColumns = ['createdAt', 'updatedAt'] as const satisfies Array<string>
 
-export const PAGE_SIZE = 20
+export const PAGE_SIZE = 18
 
 export type FetchResultWithPagination<T> = {
   items: Array<T>
@@ -83,9 +88,7 @@ export const fetchNotesOperation = async (
     (d) => ({ noteId: d.id, ...convertDate(d.data(), dateColumns) }) as Note,
   )
   const lastDoc =
-    snapshot.docs.length > 0
-      ? snapshot.docs[snapshot.docs.length - 1]
-      : null
+    snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null
   const hasMore = snapshot.docs.length === pageSize
 
   return { items, lastDoc, hasMore }
@@ -125,9 +128,7 @@ export const fetchPinnedNotesOperation = async (
     (d) => ({ noteId: d.id, ...convertDate(d.data(), dateColumns) }) as Note,
   )
   const lastDoc =
-    snapshot.docs.length > 0
-      ? snapshot.docs[snapshot.docs.length - 1]
-      : null
+    snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null
   const hasMore = snapshot.docs.length === pageSize
 
   return { items, lastDoc, hasMore }
