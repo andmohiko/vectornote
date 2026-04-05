@@ -7,17 +7,22 @@ import { useFirebaseAuthContext } from '@/providers/FirebaseAuthProvider'
 import type { NoteFormValues } from '../schemas/noteSchema'
 import { noteQueryKey } from './useNote'
 
+type UpdateNoteInput = NoteFormValues & {
+  isPinned: boolean
+}
+
 export const useUpdateNoteMutation = (noteId: string) => {
   const { uid } = useFirebaseAuthContext()
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (values: NoteFormValues) => {
+    mutationFn: async (values: UpdateNoteInput) => {
       if (!uid) throw new Error('認証エラー')
 
       const dto: UpdateNoteDto = {
         content: values.content,
         title: values.title || '',
+        isPinned: values.isPinned,
         keywords: values.keywords ?? '',
         tags: values.tags || [],
         updatedAt: serverTimestamp,

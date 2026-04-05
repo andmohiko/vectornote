@@ -23,6 +23,7 @@ type NoteFormProps = {
   isPending?: boolean
   resetOnSuccess?: boolean
   footerLeft?: React.ReactNode
+  submitLeft?: React.ReactNode
   contentLabelRight?: React.ReactNode
   expandContent?: boolean
   autoFocusContent?: boolean
@@ -37,6 +38,7 @@ export const NoteForm = ({
   isPending = false,
   resetOnSuccess = false,
   footerLeft,
+  submitLeft,
   contentLabelRight,
   expandContent = false,
   autoFocusContent = false,
@@ -229,10 +231,13 @@ export const NoteForm = ({
 
       <div className="flex items-center justify-between">
         <div>{footerLeft}</div>
-        <Button type="submit" disabled={isPending}>
-          {isPending && <Spinner className="mr-2" />}
-          {submitLabel}
-        </Button>
+        <div className="flex items-center gap-2">
+          {submitLeft}
+          <Button type="submit" disabled={isPending}>
+            {isPending && <Spinner className="mr-2" />}
+            {submitLabel}
+          </Button>
+        </div>
       </div>
     </form>
   )

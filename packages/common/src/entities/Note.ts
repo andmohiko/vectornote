@@ -24,6 +24,7 @@ export type Note = {
   createdAt: Date
   content: string
   embedding: VectorValue | null
+  isPinned: boolean
   ogp: OgpInfo | null
   keywords: string
   tags: string[]
@@ -41,6 +42,7 @@ export type CreateNoteDto = Omit<Note, 'noteId' | 'createdAt' | 'updatedAt'> & {
 /** 更新用DTO */
 export type UpdateNoteDto = {
   content?: Note['content']
+  isPinned?: Note['isPinned']
   keywords?: Note['keywords']
   ogp?: Note['ogp']
   tags?: Note['tags']

@@ -1,6 +1,6 @@
 import type { Note } from '@vectornote/common'
-import { Check, Copy } from 'lucide-react'
-import { useCallback, useRef, useState } from 'react'
+import { Check, Copy, Pin, PinOff } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useDisclosure } from '@/hooks/useDisclosure'
+import { useTogglePinMutation } from '../hooks/useTogglePinMutation'
 import { useUpdateNoteMutation } from '../hooks/useUpdateNoteMutation'
 import type { NoteFormValues } from '../schemas/noteSchema'
 import { DeleteNoteDialog } from './DeleteNoteDialog'
@@ -23,9 +24,14 @@ type NoteDetailModalProps = {
 
 export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
   const { mutateAsync, isPending } = useUpdateNoteMutation(note?.noteId ?? '')
+  const { mutateAsync: togglePin, isPending: isTogglePinPending } = useTogglePinMutation(note?.noteId ?? '')
   const { isOpen: deleteDialogOpen, open: openDeleteDialog, close: closeDeleteDialog } = useDisclosure()
   const [isCopied, setIsCopied] = useState(false)
+  const [localIsPinned, setLocalIsPinned] = useState<boolean | null>(null)
   const isDirtyRef = useRef(false)
+  const isPinned = localIsPinned ?? note?.isPinned ?? false
+
+  useEffect(() => setLocalIsPinned(null), [note?.noteId])
 
   const handleDirtyChange = useCallback((isDirty: boolean) => {
     isDirtyRef.current = isDirty
@@ -53,14 +59,19 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
     }
   }
 
+  const handleTogglePin = async () => {
+    setLocalIsPinned(!isPinned)
+    await togglePin(isPinned)
+  }
+
   const handleSubmit = async (values: NoteFormValues) => {
-    await mutateAsync(values)
+    await mutateAsync({ ...values, isPinned })
     isDirtyRef.current = false
     onClose()
   }
 
   const handleSave = async (values: NoteFormValues) => {
-    await mutateAsync(values)
+    await mutateAsync({ ...values, isPinned })
     isDirtyRef.current = false
   }
 
@@ -111,6 +122,19 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
                     onClick={openDeleteDialog}
                   >
                     削除
+                  </Button>
+                }
+                submitLeft={
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    onClick={handleTogglePin}
+                    disabled={isTogglePinPending}
+                    aria-label={isPinned ? '固定解除' : '固定する'}
+                    className="size-8"
+                  >
+                    {isPinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
                   </Button>
                 }
               />

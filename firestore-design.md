@@ -33,6 +33,7 @@
 - createdAt: Timestamp 作成日時
 - content: String メモの本文（必須）
 - embedding: vector(1536)
+- isPinned: Boolean 固定タブに表示するかどうか
 - keywords: String 検索時のキーワード
 - tags: Array<String> メモのジャンル分け用のタグ
 - title: String メモのタイトル（任意）

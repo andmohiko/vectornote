@@ -106,6 +106,33 @@ export const subscribeNotesOperation = (
   })
 }
 
+/** 固定メモ一覧を取得する（ページネーション対応） */
+export const fetchPinnedNotesOperation = async (
+  uid: Uid,
+  pageSize: number,
+  lastDocument: DocumentSnapshot | null,
+): Promise<FetchResultWithPagination<Note>> => {
+  const baseConstraints = [
+    where('isPinned', '==', true),
+    orderBy('updatedAt', 'desc'),
+  ]
+  const constraints = lastDocument
+    ? [...baseConstraints, startAfter(lastDocument), limit(pageSize)]
+    : [...baseConstraints, limit(pageSize)]
+
+  const snapshot = await getDocs(query(notesRef(uid), ...constraints))
+  const items = snapshot.docs.map(
+    (d) => ({ noteId: d.id, ...convertDate(d.data(), dateColumns) }) as Note,
+  )
+  const lastDoc =
+    snapshot.docs.length > 0
+      ? snapshot.docs[snapshot.docs.length - 1]
+      : null
+  const hasMore = snapshot.docs.length === pageSize
+
+  return { items, lastDoc, hasMore }
+}
+
 /** メモを作成する */
 export const createNoteOperation = async (
   uid: Uid,

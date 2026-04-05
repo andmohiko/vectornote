@@ -1,9 +1,10 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
-import { useCallback } from 'react'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { useCallback, useState } from 'react'
 import { z } from 'zod'
 import { CreateNoteButton } from '@/components/CreateNoteButton'
 import { CreateNoteModal } from '@/features/notes/components/CreateNoteModal'
 import { NoteList } from '@/features/notes/components/NoteList'
+import { PinnedNoteList } from '@/features/notes/components/PinnedNoteList'
 import { useTags } from '@/features/tags/hooks/useTags'
 import { useDisclosure } from '@/hooks/useDisclosure'
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut'
@@ -19,53 +20,92 @@ function HomePage() {
   const { tag } = Route.useSearch()
   const { tags } = useTags()
   const topTags = tags.slice(0, TOP_TAGS_COUNT)
-  const { isOpen: isCreateModalOpen, open: openCreateModal, close: closeCreateModal } = useDisclosure()
+  const {
+    isOpen: isCreateModalOpen,
+    open: openCreateModal,
+    close: closeCreateModal,
+  } = useDisclosure()
+  const [activeTab, setActiveTab] = useState<'latest' | 'pinned'>('latest')
 
-  useKeyboardShortcut('c', useCallback((e) => {
-    e.preventDefault()
-    openCreateModal()
-  }, [openCreateModal]))
+  useKeyboardShortcut(
+    'c',
+    useCallback(
+      (e) => {
+        e.preventDefault()
+        openCreateModal()
+      },
+      [openCreateModal],
+    ),
+  )
 
   return (
     <main className="pb-8 pt-4">
-      <nav className="mb-4 flex gap-2 overflow-x-auto">
-        <Link
-          to="/"
-          search={{}}
-          className={`shrink-0 rounded-full border px-3 py-1 text-sm transition-colors ${
-            !tag
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-background text-muted-foreground hover:bg-accent'
+      <div className="mb-4 flex border-b">
+        <button
+          className={`flex-1 pb-2 text-center text-sm font-medium transition-colors ${
+            activeTab === 'latest'
+              ? 'border-b-2 border-primary text-foreground'
+              : 'text-muted-foreground hover:text-foreground'
           }`}
+          onClick={() => setActiveTab('latest')}
+          type="button"
         >
-          すべて
-        </Link>
-        {topTags.map((t) => (
+          最新
+        </button>
+        <button
+          className={`flex-1 pb-2 text-center text-sm font-medium transition-colors ${
+            activeTab === 'pinned'
+              ? 'border-b-2 border-primary text-foreground'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+          onClick={() => setActiveTab('pinned')}
+          type="button"
+        >
+          固定
+        </button>
+      </div>
+
+      {activeTab === 'latest' && (
+        <nav className="mb-4 flex gap-2 overflow-x-auto">
           <Link
-            key={t.tagId}
             to="/"
-            search={{ tag: t.label }}
+            search={{}}
             className={`shrink-0 rounded-full border px-3 py-1 text-sm transition-colors ${
-              tag === t.label
+              !tag
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-background text-muted-foreground hover:bg-accent'
             }`}
           >
-            #{t.label}
+            すべて
           </Link>
-        ))}
-      </nav>
+          {topTags.map((t) => (
+            <Link
+              key={t.tagId}
+              to="/"
+              search={{ tag: t.label }}
+              className={`shrink-0 rounded-full border px-3 py-1 text-sm transition-colors ${
+                tag === t.label
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-background text-muted-foreground hover:bg-accent'
+              }`}
+            >
+              #{t.label}
+            </Link>
+          ))}
+        </nav>
+      )}
 
       <section>
-        <NoteList tag={tag} onClickCreate={openCreateModal} />
+        {activeTab === 'latest' ? (
+          <NoteList tag={tag} onClickCreate={openCreateModal} />
+        ) : (
+          <PinnedNoteList />
+        )}
       </section>
 
       <CreateNoteButton onClick={openCreateModal} />
 
-      <CreateNoteModal
-        open={isCreateModalOpen}
-        onClose={closeCreateModal}
-      />
+      <CreateNoteModal open={isCreateModalOpen} onClose={closeCreateModal} />
     </main>
   )
 }
