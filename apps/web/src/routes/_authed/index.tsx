@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { LayoutGrid, List } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { z } from 'zod'
 import { CreateNoteButton } from '@/components/CreateNoteButton'
 import { CreateNoteModal } from '@/features/notes/components/CreateNoteModal'
 import { NoteList } from '@/features/notes/components/NoteList'
 import { PinnedNoteList } from '@/features/notes/components/PinnedNoteList'
+import { useNoteViewMode } from '@/features/notes/hooks/useNoteViewMode'
 import { useTags } from '@/features/tags/hooks/useTags'
 import { useDisclosure } from '@/hooks/useDisclosure'
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut'
@@ -26,6 +28,7 @@ function HomePage() {
     close: closeCreateModal,
   } = useDisclosure()
   const [activeTab, setActiveTab] = useState<'latest' | 'pinned'>('latest')
+  const { viewMode, setViewMode } = useNoteViewMode()
 
   useKeyboardShortcut(
     'c',
@@ -40,7 +43,7 @@ function HomePage() {
 
   return (
     <main className="pb-8 pt-4">
-      <div className="mb-4 flex border-b">
+      <div className="mb-4 flex items-center border-b">
         <button
           className={`flex-1 pb-2 text-center text-sm font-medium transition-colors ${
             activeTab === 'latest'
@@ -63,6 +66,32 @@ function HomePage() {
         >
           固定
         </button>
+        <div className="mb-2 ml-2 flex items-center gap-0.5 rounded-md bg-muted p-0.5">
+          <button
+            type="button"
+            aria-label="カード表示"
+            className={`rounded p-1.5 transition-colors ${
+              viewMode === 'card'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            onClick={() => setViewMode('card')}
+          >
+            <LayoutGrid className="size-4" />
+          </button>
+          <button
+            type="button"
+            aria-label="リスト表示"
+            className={`rounded p-1.5 transition-colors ${
+              viewMode === 'list'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            onClick={() => setViewMode('list')}
+          >
+            <List className="size-4" />
+          </button>
+        </div>
       </div>
 
       {activeTab === 'latest' && (
@@ -97,9 +126,13 @@ function HomePage() {
 
       <section>
         {activeTab === 'latest' ? (
-          <NoteList tag={tag} onClickCreate={openCreateModal} />
+          <NoteList
+            tag={tag}
+            viewMode={viewMode}
+            onClickCreate={openCreateModal}
+          />
         ) : (
-          <PinnedNoteList />
+          <PinnedNoteList viewMode={viewMode} />
         )}
       </section>
 

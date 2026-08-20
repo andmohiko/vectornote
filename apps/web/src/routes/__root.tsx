@@ -90,7 +90,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <SidebarProvider>
       <SideNav />
-      <SidebarInset>
+      <SidebarInset className="min-w-0">
         <Header />
         <div className="flex-1 px-4">
           {children}

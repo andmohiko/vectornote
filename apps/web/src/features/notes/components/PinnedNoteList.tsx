@@ -3,11 +3,17 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Spinner } from '@/components/ui/spinner'
+import type { NoteViewMode } from '../hooks/useNoteViewMode'
 import { usePinnedNotes } from '../hooks/usePinnedNotes'
 import { NoteCard } from './NoteCard'
 import { NoteDetailModal } from './NoteDetailModal'
+import { NoteListItem } from './NoteListItem'
 
-export const PinnedNoteList = () => {
+type PinnedNoteListProps = {
+  viewMode: NoteViewMode
+}
+
+export const PinnedNoteList = ({ viewMode }: PinnedNoteListProps) => {
   const {
     data,
     isLoading,
@@ -39,10 +45,16 @@ export const PinnedNoteList = () => {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
   if (isLoading) {
-    return (
+    return viewMode === 'card' ? (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i.toString()} className="h-36 w-full rounded-lg" />
+        ))}
+      </div>
+    ) : (
+      <div className="flex flex-col gap-2">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i.toString()} className="h-16 w-full rounded-lg" />
         ))}
       </div>
     )
@@ -74,11 +86,27 @@ export const PinnedNoteList = () => {
   return (
     <>
       <div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {notes.map((note) => (
-            <NoteCard key={note.noteId} note={note} onClick={setSelectedNote} />
-          ))}
-        </div>
+        {viewMode === 'card' ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {notes.map((note) => (
+              <NoteCard
+                key={note.noteId}
+                note={note}
+                onClick={setSelectedNote}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="divide-y overflow-hidden rounded-lg border">
+            {notes.map((note) => (
+              <NoteListItem
+                key={note.noteId}
+                note={note}
+                onClick={setSelectedNote}
+              />
+            ))}
+          </div>
+        )}
         <div ref={observerRef} className="mt-8 flex justify-center">
           {isFetchingNextPage && <Spinner className="size-6" />}
         </div>
