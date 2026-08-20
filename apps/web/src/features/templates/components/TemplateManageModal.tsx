@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Template } from '@vectornote/common'
 import { Plus } from 'lucide-react'
 
@@ -34,6 +34,14 @@ export const TemplateManageModal = ({
   } = useDisclosure()
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
   const [editTarget, setEditTarget] = useState<Template | null>(null)
+
+  useEffect(() => {
+    if (!open) {
+      closeCreate()
+      setEditTarget(null)
+      setDeleteTargetId(null)
+    }
+  }, [open, closeCreate])
 
   return (
     <>

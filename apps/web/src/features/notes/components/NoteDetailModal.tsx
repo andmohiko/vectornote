@@ -32,6 +32,7 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
   const isPinned = localIsPinned ?? note?.isPinned ?? false
 
   useEffect(() => setLocalIsPinned(null), [note?.noteId])
+  useEffect(() => closeDeleteDialog(), [note?.noteId, closeDeleteDialog])
 
   const handleDirtyChange = useCallback((isDirty: boolean) => {
     isDirtyRef.current = isDirty
