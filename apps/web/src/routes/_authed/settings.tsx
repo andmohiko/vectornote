@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 import { Button } from '@/components/ui/button'
+import { ThemeCard } from '@/features/settings/components/ThemeCard'
 import { TemplateManageSection } from '@/features/templates/components/TemplateManageSection'
 import { useFirebaseAuthContext } from '@/providers/FirebaseAuthProvider'
 
@@ -14,6 +15,10 @@ function SettingsPage() {
   return (
     <main className="pb-8 pt-14">
       <h1 className="mb-8 text-xl font-semibold">設定</h1>
+
+      <section className="mb-12">
+        <ThemeCard />
+      </section>
 
       <section className="mb-12">
         <h2 className="mb-4 text-lg font-semibold">テンプレート管理</h2>
