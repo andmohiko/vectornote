@@ -6,6 +6,7 @@ import {
   keymap,
   lineNumbers,
   placeholder as placeholderExt,
+  scrollPastEnd,
 } from '@codemirror/view'
 import { markdownKeymap } from './markdown-keybindings'
 
@@ -59,6 +60,7 @@ export const createMinimalSetup = (options?: {
   history(),
   keymap.of([...markdownKeymap, ...defaultKeymap, ...historyKeymap]),
   EditorView.lineWrapping,
+  scrollPastEnd(),
   baseTheme,
   ...(options?.placeholder ? [placeholderExt(options.placeholder)] : []),
 ]
