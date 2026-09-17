@@ -1,9 +1,11 @@
-import * as admin from 'firebase-admin'
+import { applicationDefault, initializeApp } from 'firebase-admin/app'
+import { getAuth } from 'firebase-admin/auth'
+import { FieldValue, getFirestore } from 'firebase-admin/firestore'
 
-admin.initializeApp({
-  credential: admin.credential.applicationDefault(),
+initializeApp({
+  credential: applicationDefault(),
 })
-export const db = admin.firestore()
-export const serverTimestamp = admin.firestore.FieldValue.serverTimestamp()
+export const db = getFirestore()
+export const serverTimestamp = FieldValue.serverTimestamp()
 
-export const auth = admin.auth()
+export const auth = getAuth()

@@ -1,4 +1,3 @@
-import * as admin from 'firebase-admin'
 import type { FirestoreEvent } from 'firebase-functions/v2/firestore'
 
 import { db, serverTimestamp } from '~/lib/firebase'
@@ -9,7 +8,7 @@ const hasAlreadyTriggered = (
 ): Promise<boolean> => {
   const id = [eventId, suffix].join('-')
   return db.runTransaction(async (t) => {
-    const ref = admin.firestore().collection('triggerEvents').doc(id)
+    const ref = db.collection('triggerEvents').doc(id)
     const doc = await t.get(ref)
     if (doc.exists) {
       return true

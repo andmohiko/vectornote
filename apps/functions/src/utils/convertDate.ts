@@ -1,12 +1,12 @@
-import type * as admin from 'firebase-admin'
+import type { DocumentData, Timestamp } from 'firebase-admin/firestore'
 
 // TimestampをDateに変換
 export function convertDate(
-  snapshot: admin.firestore.DocumentData,
+  snapshot: DocumentData,
   targetKey: Array<string>,
-): admin.firestore.DocumentData {
+): DocumentData {
   for (const key of targetKey) {
-    const value: admin.firestore.Timestamp = snapshot[key]
+    const value: Timestamp = snapshot[key]
     if (value) {
       snapshot[key] = value.toDate()
     }
