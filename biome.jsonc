@@ -11,7 +11,9 @@
       "packages/*/src/**/*",
       "!**/node_modules/**",
       "!**/dist/**",
-      "!**/dev-dist/**"
+      "!**/dev-dist/**",
+      "!**/src/routeTree.gen.ts",
+      "!**/src/styles.css"
     ]
   },
   "formatter": {
