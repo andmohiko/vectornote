@@ -9,21 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthedRouteImport } from './routes/_authed'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthedIndexRouteImport } from './routes/_authed/index'
-import { Route as AuthedSettingsRouteImport } from './routes/_authed/settings'
-import { Route as AuthedSearchRouteImport } from './routes/_authed/search'
 import { Route as AuthedAboutRouteImport } from './routes/_authed/about'
+import { Route as AuthedSearchRouteImport } from './routes/_authed/search'
+import { Route as AuthedSettingsRouteImport } from './routes/_authed/settings'
 import { Route as AuthedDemoTanstackQueryRouteImport } from './routes/_authed/demo/tanstack-query'
 
+const AuthedRoute = AuthedRouteImport.update({
+  id: '/_authed',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthedRoute = AuthedRouteImport.update({
-  id: '/_authed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthedIndexRoute = AuthedIndexRouteImport.update({
@@ -31,9 +31,9 @@ const AuthedIndexRoute = AuthedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthedRoute,
 } as any)
-const AuthedSettingsRoute = AuthedSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const AuthedAboutRoute = AuthedAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedSearchRoute = AuthedSearchRouteImport.update({
@@ -41,9 +41,9 @@ const AuthedSearchRoute = AuthedSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => AuthedRoute,
 } as any)
-const AuthedAboutRoute = AuthedAboutRouteImport.update({
-  id: '/about',
-  path: '/about',
+const AuthedSettingsRoute = AuthedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedDemoTanstackQueryRoute = AuthedDemoTanstackQueryRouteImport.update({
@@ -81,20 +81,10 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
-    | '/login'
-    | '/about'
-    | '/search'
-    | '/settings'
-    | '/demo/tanstack-query'
+    '/' | '/login' | '/about' | '/search' | '/settings' | '/demo/tanstack-query'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/login'
-    | '/about'
-    | '/search'
-    | '/settings'
-    | '/'
-    | '/demo/tanstack-query'
+    '/login' | '/about' | '/search' | '/settings' | '/' | '/demo/tanstack-query'
   id:
     | '__root__'
     | '/_authed'
@@ -113,18 +103,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authed': {
       id: '/_authed'
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authed/': {
@@ -134,11 +124,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedIndexRouteImport
       parentRoute: typeof AuthedRoute
     }
-    '/_authed/settings': {
-      id: '/_authed/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthedSettingsRouteImport
+    '/_authed/about': {
+      id: '/_authed/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AuthedAboutRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/search': {
@@ -148,11 +138,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedSearchRouteImport
       parentRoute: typeof AuthedRoute
     }
-    '/_authed/about': {
-      id: '/_authed/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AuthedAboutRouteImport
+    '/_authed/settings': {
+      id: '/_authed/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthedSettingsRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/demo/tanstack-query': {
