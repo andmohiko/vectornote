@@ -25,12 +25,16 @@ function SettingsPage() {
         <TemplateManageSection />
       </section>
 
-      <section>
+      <section className="mb-12">
         <h2 className="mb-4 text-lg font-semibold">アカウント</h2>
         <Button variant="outline" onClick={logout}>
           ログアウト
         </Button>
       </section>
+
+      <p className="text-sm text-muted-foreground">
+        バージョン: {import.meta.env.VITE_VERSION ?? '-'}
+      </p>
     </main>
   )
 }
