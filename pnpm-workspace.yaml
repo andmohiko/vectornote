@@ -1,3 +1,36 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+allowBuilds:
+  '@firebase/util': true
+  esbuild: true
+  lightningcss: true
+  protobufjs: true
+minimumReleaseAgeExclude:
+  - '@cspell/cspell-bundled-dicts@10.3.3'
+  - '@cspell/cspell-json-reporter@10.3.3'
+  - '@cspell/cspell-performance-monitor@10.3.3'
+  - '@cspell/cspell-pipe@10.3.3'
+  - '@cspell/cspell-resolver@10.3.3'
+  - '@cspell/cspell-service-bus@10.3.3'
+  - '@cspell/cspell-types@10.3.3'
+  - '@cspell/cspell-worker@10.3.3'
+  - '@cspell/dynamic-import@10.3.3'
+  - '@cspell/filetypes@10.3.3'
+  - '@cspell/rpc@10.3.3'
+  - '@cspell/strong-weak-map@10.3.3'
+  - '@cspell/url@10.3.3'
+  - '@tanstack/router-core@1.171.32'
+  - '@tanstack/router-generator@1.167.38'
+  - '@tanstack/router-plugin@1.168.40'
+  - cspell-config-lib@10.3.3
+  - cspell-dictionary@10.3.3
+  - cspell-gitignore@10.3.3
+  - cspell-glob@10.3.3
+  - cspell-grammar@10.3.3
+  - cspell-io@10.3.3
+  - cspell-lib@10.3.3
+  - cspell-trie-lib@10.3.3
+  - cspell@10.3.3
+  - openai@7.17.0
+  - jsdom@30.1.0

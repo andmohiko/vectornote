@@ -15,7 +15,8 @@
       "Bash(firebase firestore:indexes)",
       "Bash(pnpm web build)",
       "Bash(pnpm functions pre-build)",
-      "Bash(pnpm deploy:functions)"
+      "Bash(pnpm deploy:functions)",
+      "Bash(pnpm install *)"
     ],
     "deny": [],
     "ask": []
