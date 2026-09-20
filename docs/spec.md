@@ -57,10 +57,11 @@
 | 優先度 | 必須 |
 
 **詳細要件:**
-- ログイン状態をブラウザセッションで維持する
-- セッション有効期限は30日間とする
+- ログイン状態を永続化する（Firebase Authの状態 + `localStorage` にログイン時刻 `auth_login_at` を保存）
+- セッション有効期限は30日間とする。`onAuthStateChanged` 内で経過時間が30日を超えていれば自動ログアウトし `/login` へ遷移する
 - 複数デバイスからの同時ログインを許可する
-- TanStack Routerのルートガードで認証状態を検証する
+- TanStack Routerのレイアウトルート（`_authed`）の `beforeLoad` で `auth.currentUser` を検証し、未認証時は `/login` へリダイレクトする
+- ログアウト時は `signOut` に加えて `localStorage` のログイン時刻削除と TanStack Query キャッシュのクリア（`queryClient.clear()`）を行う
 
 ---
 
@@ -82,12 +83,18 @@
 | 関連キーワード (keywords) | 任意 | string \| null | 500文字以下。カンマまたはスペース区切り |
 | タグ (tags) | 任意 | string[] | 各タグ50文字以下、最大10個 |
 
+**詳細要件:**
+- テンプレートを選択して各フィールドの初期値を流し込める（詳細は FR-TEMPLATE-001 参照）
+- 未保存のまま作成を中断しようとした場合は確認を表示する
+
 **処理フロー:**
 1. ユーザーがフォームに入力
 2. クライアント側でZodによるバリデーション
-3. Firebase Functionsでベクトル埋め込みを生成
-4. Firestoreにメモデータ + 埋め込みベクトルを保存
-5. 成功後、一覧画面へ遷移
+3. Firestoreにメモデータを保存（`addDoc` / 自動ID。`embedding: null`, `isPinned: false`, `ogp: null`, `updatedBy: 'user'` で初期化）
+4. Firestoreの `onDocumentCreated` トリガーが起動し、OGP取得・ツイート引用挿入・ベクトル埋め込み生成を非同期で実行し、ドキュメントを更新する
+5. 成功後、モーダルを閉じて一覧を再取得（invalidate）する
+
+> 注: 埋め込みはメモ保存時ではなく Firestore トリガーで非同期生成されるため、作成直後は `embedding: null`。生成完了までに遅延がある（詳細は FR-EMBED-001 参照）。
 
 #### FR-MEMO-002: メモの編集
 
@@ -97,10 +104,12 @@
 | 優先度 | 必須 |
 
 **詳細要件:**
-- 作成済みメモの全フィールドを編集可能とする
-- 編集時はベクトル埋め込みを再生成する
+- 作成済みメモの全フィールド（本文・タイトル・キーワード・タグ）を編集可能とする
+- 更新時は `updatedBy: 'user'` をセットする。`title / content / keywords / tags` のいずれかが変更された場合、Firestoreの `onDocumentUpdated` トリガーがベクトル埋め込みを再生成する（`updatedBy: 'trigger'` による更新では再生成しない = 再帰トリガー防止）
 - 更新日時（updatedAt）を自動更新する
-- 楽観的更新（Optimistic Update）を実装し、UXを向上させる
+- 楽観的更新（Optimistic Update）を実装する（対象は単一ノート詳細キャッシュ。一覧は invalidate で再取得）
+- 本文コピー、ピン留めトグルの操作を提供する
+- 未保存のまま編集を中断しようとした場合は確認を表示する
 
 #### FR-MEMO-003: メモの削除
 
@@ -110,9 +119,10 @@
 | 優先度 | 必須 |
 
 **詳細要件:**
-- 確認ダイアログを表示後、メモを削除する
-- 削除は物理削除（復元不可）とする
-- 削除後は一覧画面へ遷移する
+- 確認（「この操作は取り消せません」）を経てからメモを削除する
+- 削除は物理削除（復元不可）とする（`deleteDoc`）
+- 削除後は `onDocumentDeleted` トリガーがタグ使用回数（count）をデクリメントする
+- 削除後は一覧を再取得（invalidate）する
 
 #### FR-MEMO-004: メモ一覧表示
 
@@ -122,11 +132,24 @@
 | 優先度 | 必須 |
 
 **詳細要件:**
-- ログイン後のデフォルト画面としてメモ一覧を表示する
-- 更新日時の降順（最新順）でソートする
-- 無限スクロールによるページネーションを実装する（1回あたり20件）
-- 各メモはタイトル（または本文先頭50文字）、タグ、更新日時を表示する
+- ログイン後のデフォルト画面（`/`）としてメモ一覧を表示する
+- 「最新」と「固定（`isPinned: true` のみ）」を切り替えて表示できる（詳細は FR-MEMO-005 参照）
+- 更新日時の降順（最新順）でソートする（`orderBy('updatedAt', 'desc')`）
+- 無限スクロールによるページネーションを実装する（カーソル `startAfter`、**1回あたり18件**）
+- 各メモはタイトル（または本文先頭）、タグ、更新日時、OGP情報を表示する
+- URLクエリ `?tag=xxx` によるタグ絞り込みが可能（`where('tags', 'array-contains', tag)`）
 - TanStack Queryによるデータフェッチとキャッシュ管理
+
+#### FR-MEMO-005: メモの固定（ピン留め）
+
+| 項目 | 内容 |
+|------|------|
+| 概要 | 重要なメモをピン留めして固定表示する |
+| 優先度 | 中 |
+
+**詳細要件:**
+- メモの `isPinned` フラグをトグルできる
+- 「固定」表示では `isPinned: true` のメモを更新日時降順・無限スクロールで一覧表示する
 
 ---
 
@@ -140,11 +163,13 @@
 | 優先度 | 必須 |
 
 **詳細要件:**
-- 検索クエリをベクトル化し、保存済みメモとのコサイン類似度を計算する
-- 類似度が閾値（0.3）以上のメモを検索結果として返す
+- 検索クエリをベクトル化し、Firestore Vector Search（`findNearest`, `distanceMeasure: 'COSINE'`）で近傍メモを取得する
+- `similarity = 1 - distance` に変換し、閾値以上のメモを検索結果として返す
+  - サーバー既定値: `minSimilarity = 0.3`
+  - **クライアントは `minSimilarity: 0.2`, `limit: 20` を明示送信するため、実効閾値は 0.2**
 - 検索結果は類似度の降順でソートする
-- 各検索結果に類似度スコア（パーセント表示）を表示する
-- 検索中はローディング状態を表示する
+- 各検索結果に類似度スコア（パーセント表示）を付与する
+- 検索は `/search?q=xxx` で実行する
 
 **検索例:**
 
@@ -160,6 +185,7 @@
 |------|------|
 | 概要 | 条件によるフィルタリング |
 | 優先度 | 中 |
+| **実装状況** | **未実装**（一覧画面のタグ絞り込み `?tag=` はあるが、セマンティック検索側のフィルタ併用は未対応） |
 
 **詳細要件:**
 - タグによるフィルタリングが可能
@@ -172,6 +198,7 @@
 |------|------|
 | 概要 | 過去の検索クエリの保存・再利用 |
 | 優先度 | 低 |
+| **実装状況** | **未実装**（検索クエリはURLの `q` パラメータに保持されるのみ） |
 
 **詳細要件:**
 - 直近10件の検索クエリをローカルストレージに保存する
@@ -189,10 +216,14 @@
 | 優先度 | 必須 |
 
 **詳細要件:**
-- メモ保存時に自動的にベクトル埋め込みを生成する
-- 埋め込み対象テキスト = `タイトル + 本文 + 関連キーワード + タグ`（連結）
-- OpenAI text-embedding-3-small（1536次元）を使用する
-- 埋め込み生成はFirebase Functions経由で実行（APIキー保護）
+- 埋め込みは **onCall関数ではなく Firestore トリガー**（`onDocumentCreated` / `onDocumentUpdated`）で非同期生成する。各トリガーは `triggerOnce` で冪等化する
+- トリガー内の処理順序: OGP取得（`fetchOgp`）→ ツイート引用挿入（`insertTweetQuote`）→ content/ogp更新 → 埋め込み生成
+- 埋め込み対象テキスト（`buildEmbeddingText`）= `タイトル + 本文 + 関連キーワード + タグ + OGPタイトル + OGP説明`（空要素を除外して連結）
+- OpenAI text-embedding-3-small（1536次元）を使用する（次元数はコードで明示せず、モデル既定 + `firestore.indexes.json` の `dimension: 1536` に依存）
+- Firestoreへは `FieldValue.vector(embedding)` として保存する（型は `VectorValue | null`）
+- OpenAI APIキーは Firebase Functions Secret で保護する（クライアントに露出しない）
+- 更新時は `title / content / keywords / tags` のいずれか変更時のみ再生成。`updatedBy: 'trigger'` の更新では再生成しない（再帰トリガー防止）
+- OpenAI API 失敗時はログ出力のみで、自動リトライ機構はない（`embedding: null` のまま残る）
 
 #### FR-EMBED-002: バッチ処理
 
@@ -200,10 +231,96 @@
 |------|------|
 | 概要 | 大量データのインポート時の効率化 |
 | 優先度 | 低 |
+| **実装状況** | **未実装**（インポート機能自体が未実装） |
 
 **詳細要件:**
 - インポート機能使用時はバッチでベクトル生成を行う
 - 1バッチあたり最大100件とする
+
+---
+
+### 2.5 テンプレート機能
+
+#### FR-TEMPLATE-001: メモテンプレート
+
+| 項目 | 内容 |
+|------|------|
+| 概要 | メモ作成時に定型フォーマットを流し込むテンプレート |
+| 優先度 | 中 |
+
+**詳細要件:**
+- テンプレートは `users/{uid}/templates` サブコレクションで管理する
+- テンプレートは `name`（テンプレート名）と、メモに流し込む雛形（`body` / `defaultTitle` / `defaultKeyword` / `defaultTags`）を持つ
+- テンプレートの作成・編集・削除ができる
+- メモ作成時にテンプレートを選択すると、各フィールドに `content=body / title=defaultTitle / keywords=defaultKeyword / tags=defaultTags` が投入される
+- テンプレート一覧は `onSnapshot` によるリアルタイム購読（`createdAt` 昇順）
+
+**バリデーション:** name 必須100字以内、body 必須10,000字以内、defaultTitle 100字以内、defaultKeyword 500字以内、defaultTags 各50字以内・最大10個
+
+---
+
+### 2.6 タグ機能
+
+#### FR-TAG-001: タグの自動集計
+
+| 項目 | 内容 |
+|------|------|
+| 概要 | タグの使用回数をサーバー側で自動集計する |
+| 優先度 | 中 |
+
+**詳細要件:**
+- タグは Note の `tags: string[]` フィールドに加えて、`users/{uid}/tags` サブコレクション（`label`, `count`）でも管理する
+- メモの作成/更新/削除トリガーがタグを走査し、使用回数を自動同期する（既存タグは `FieldValue.increment(±1)`、無ければ新規作成、count が 1 以下になれば削除）
+
+#### FR-TAG-002: タグサジェスト
+
+| 項目 | 内容 |
+|------|------|
+| 概要 | タグ入力時のサジェスト表示 |
+| 優先度 | 中 |
+
+**詳細要件:**
+- タグ入力時にサジェストを提示する（メモ・テンプレートの両方の入力で共通）
+- 入力が空のとき: 最近使ったタグ（`updatedAt` 降順・上位10件、選択済みを除外）を提示
+- 入力があるとき: 全タグから前方一致（小文字化）でフィルタして候補を提示
+
+---
+
+### 2.7 リッチコンテンツ機能
+
+#### FR-RICH-001: OGP取得
+
+| 項目 | 内容 |
+|------|------|
+| 概要 | 本文中のURLからOGP情報を取得して保存する |
+| 優先度 | 低 |
+
+**詳細要件:**
+- メモ作成/更新トリガーが本文の最初のURLを抽出し、OGP情報（`og:title` / `og:description` / `og:image`、無ければ `<title>`）を取得する（5秒タイムアウト、User-Agent `VectorNoteBot/1.0`）
+- 取得した情報は `Note.ogp: OgpInfo{url, title, description, image}` として保存する
+- OGPのタイトル・説明は埋め込みテキストにも連結する
+
+#### FR-RICH-002: ツイート引用
+
+| 項目 | 内容 |
+|------|------|
+| 概要 | ツイートURLの本文を引用ブロックとして挿入する |
+| 優先度 | 低 |
+
+**詳細要件:**
+- 本文の最初のURLが `twitter.com` / `x.com` の `/status/{id}` の場合、Twitter oEmbed API（`publish.twitter.com/oembed`）からツイート本文・投稿者を取得する
+- URL直前に `> 本文\n> - 作者名 (@screenName)` の引用ブロックを挿入する（二重挿入防止あり）
+
+#### FR-RICH-003: マークダウン入力
+
+| 項目 | 内容 |
+|------|------|
+| 概要 | マークダウン記法での本文入力補助 |
+| 優先度 | 低 |
+
+**詳細要件:**
+- 本文入力時のマークダウン補助を提供する: 箇条書き `- ` / 番号付き `1. ` / チェックボックス `- [ ] ` の自動継続・自動採番、Tab/Shift-Tab でのインデント調整（最大6階層）
+- **マークダウンプレビュー（レンダリング表示）は未実装**
 
 ---
 
@@ -262,14 +379,32 @@ firestore/
 │       ├── createdAt: Timestamp
 │       ├── email: string
 │       ├── updatedAt: Timestamp
-│       └── notes/  (サブコレクション)
-│           └── {noteId}/
+│       ├── notes/  (サブコレクション)
+│       │   └── {noteId}/
+│       │       ├── createdAt: Timestamp
+│       │       ├── content: string
+│       │       ├── embedding: vector(1536) | null
+│       │       ├── isPinned: boolean
+│       │       ├── ogp: map | null      # {url, title, description, image}
+│       │       ├── keywords: string
+│       │       ├── tags: string[]
+│       │       ├── title: string | null
+│       │       ├── updatedAt: Timestamp
+│       │       └── updatedBy: 'trigger' | 'user'
+│       ├── tags/  (サブコレクション)
+│       │   └── {tagId}/
+│       │       ├── label: string
+│       │       ├── count: number
+│       │       ├── createdAt: Timestamp
+│       │       └── updatedAt: Timestamp
+│       └── templates/  (サブコレクション)
+│           └── {templateId}/
+│               ├── name: string
+│               ├── body: string
+│               ├── defaultTitle: string
+│               ├── defaultKeyword: string
+│               ├── defaultTags: string[]
 │               ├── createdAt: Timestamp
-│               ├── content: string
-│               ├── embedding: vector(1536)
-│               ├── keywords: string
-│               ├── tags: string[]
-│               ├── title: string
 │               └── updatedAt: Timestamp
 ```
 
@@ -286,13 +421,39 @@ firestore/
 
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
-| id | string | 自動生成ID（ドキュメントID） |
+| noteId | string | 自動生成ID（ドキュメントID） |
 | createdAt | Timestamp | 作成日時 |
 | content | string | メモの本文（必須） |
-| embedding | vector(1536) | ベクトル埋め込み |
+| embedding | vector(1536) \| null | ベクトル埋め込み（トリガーで生成。生成前は null） |
+| isPinned | boolean | ピン留めフラグ |
+| ogp | map \| null | OGP情報 `{url, title, description, image}` |
 | keywords | string | 検索時のキーワード |
 | tags | string[] | メモのジャンル分け用のタグ |
-| title | string | メモのタイトル（任意） |
+| title | string \| null | メモのタイトル（任意） |
+| updatedAt | Timestamp | 更新日時 |
+| updatedBy | 'trigger' \| 'user' | 直近の更新主（再帰トリガー防止用） |
+
+### 4.3.1 tags サブコレクション
+
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| tagId | string | 自動生成ID（ドキュメントID） |
+| label | string | タグ名 |
+| count | number | 使用回数（トリガーで自動同期） |
+| createdAt | Timestamp | 作成日時 |
+| updatedAt | Timestamp | 更新日時 |
+
+### 4.3.2 templates サブコレクション
+
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| templateId | string | 自動生成ID（ドキュメントID） |
+| name | string | テンプレート名 |
+| body | string | 本文の雛形 |
+| defaultTitle | string | タイトルの初期値 |
+| defaultKeyword | string | キーワードの初期値 |
+| defaultTags | string[] | タグの初期値 |
+| createdAt | Timestamp | 作成日時 |
 | updatedAt | Timestamp | 更新日時 |
 
 ### 4.4 Firestoreインデックス設定
@@ -330,180 +491,95 @@ firestore/
 
 ### 4.5 TypeScript型定義
 
-```typescript
-// types/note.ts
-import { Timestamp } from 'firebase/firestore';
+実際の型定義は `packages/common/src/entities/` に配置されている。Entity層ではFirestoreの `Timestamp` は `Date` に変換済み。
 
-export interface Note {
-  id: string;
-  createdAt: Timestamp;
+```typescript
+// packages/common/src/entities/Note.ts
+import type { VectorValue } from 'firebase/firestore';
+
+export type OgpInfo = {
+  url: string;
+  title: string | null;
+  description: string | null;
+  image: string | null;
+};
+
+export type UpdatedBy = 'trigger' | 'user';
+
+export type Note = {
+  noteId: string;
+  createdAt: Date;
   content: string;
-  embedding: number[];
+  embedding: VectorValue | null;
+  isPinned: boolean;
+  ogp: OgpInfo | null;
   keywords: string;
   tags: string[];
-  title: string;
-  updatedAt: Timestamp;
-}
+  title: string | null;
+  updatedAt: Date;
+  updatedBy: UpdatedBy;
+};
 
-export interface NoteInput {
-  content: string;
-  title?: string;
-  keywords?: string;
-  tags?: string[];
-}
-
-export interface SearchResult {
+export type SearchResult = {
   note: Note;
-  similarity: number;
-}
+  similarity: number; // 0.0 ~ 1.0
+};
 
-export interface User {
+// packages/common/src/entities/User.ts
+export type User = {
   uid: string;
-  createdAt: Timestamp;
+  createdAt: Date;
   email: string;
-  updatedAt: Timestamp;
-}
+  updatedAt: Date;
+};
+
+// packages/common/src/entities/Tag.ts
+export type Tag = {
+  tagId: string;
+  label: string;
+  count: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+// packages/common/src/entities/Template.ts
+export type Template = {
+  templateId: string;
+  name: string;
+  body: string;
+  defaultTitle: string;
+  defaultKeyword: string;
+  defaultTags: string[];
+  createdAt: Date;
+  updatedAt: Date;
+};
 ```
+
+> 注: 作成・更新用のDTO型（`CreateNoteDto` / `UpdateNoteDto` / `UpdateNoteDtoFromAdmin` など、`FieldValue` を使う型）も各Entityファイルに定義されている。
 
 ---
 
-## 5. 画面設計
+## 5. 画面・ルート構成
 
-### 5.1 画面一覧
+### 5.1 ルート一覧
 
 | 画面ID | 画面名 | パス | 認証 | 概要 |
 |--------|--------|------|------|------|
-| SCR-001 | ログイン画面 | `/login` | 不要 | Googleログインボタンを表示 |
-| SCR-002 | メモ一覧画面 | `/` | 必要 | 最新メモを一覧表示（ホーム） |
-| SCR-003 | メモ作成画面 | `/new` | 必要 | 新規メモ入力フォーム |
-| SCR-004 | メモ詳細画面 | `/note/$noteId` | 必要 | メモの詳細表示と編集 |
+| SCR-001 | ログイン画面 | `/login` | 不要 | Googleログイン（ログイン済みは `/` へリダイレクト） |
+| SCR-002 | メモ一覧画面（ホーム） | `/`（`?tag=xxx`） | 必要 | 最新/固定の切替、タグ絞り込み |
 | SCR-005 | 検索結果画面 | `/search?q=xxx` | 必要 | セマンティック検索の結果表示 |
-| SCR-006 | 設定画面 | `/settings` | 必要 | ユーザー設定 |
+| SCR-006 | 設定画面 | `/settings` | 必要 | テーマ切替・テンプレート管理・アカウント・バージョン表示 |
+| SCR-007 | Aboutページ | `/about` | 必要 | （スターター由来。削除候補） |
 
-### 5.2 画面遷移図
+- 認証は `_authed` レイアウトルートの `beforeLoad` で担保する（未認証は `/login` へリダイレクト）。
+- **メモの作成・詳細・編集は専用ページ（`/new`, `/note/$noteId`）を持たず、一覧画面上のモーダルで完結する。** spec初版の SCR-003 / SCR-004 は廃止。
 
-```
-[ログイン画面] ──(認証成功)──▶ [メモ一覧画面]
-                                    │
-                    ┌───────────────┼───────────────┐
-                    │               │               │
-                    ▼               ▼               ▼
-              [メモ作成]      [メモ詳細]      [検索結果]
-                    │               │               │
-                    └───────────────┴───────────────┘
-                                    │
-                                    ▼
-                              [設定画面]
-```
+### 5.2 設定画面（SCR-006）の機能
 
-### 5.3 SCR-001: ログイン画面
-
-**レイアウト:**
-- 中央揃えのシンプルなレイアウト
-- アプリロゴ + タイトル
-- 「Googleでログイン」ボタン
-- 簡単な説明テキスト
-
-**コンポーネント:**
-- Logo
-- GoogleSignInButton
-- FeatureDescription
-
-### 5.4 SCR-002: メモ一覧画面（ホーム）
-
-**レイアウト:**
-```
-┌─────────────────────────────────────────────┐
-│  [Logo]     [検索バー]     [Avatar][Logout] │  ← ヘッダー
-├─────────────────────────────────────────────┤
-│                                             │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐     │
-│  │ メモ1   │  │ メモ2   │  │ メモ3   │     │  ← カードグリッド
-│  │ タグ    │  │ タグ    │  │ タグ    │     │
-│  │ 日時    │  │ 日時    │  │ 日時    │     │
-│  └─────────┘  └─────────┘  └─────────┘     │
-│                                             │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐     │
-│  │ メモ4   │  │ メモ5   │  │ メモ6   │     │
-│  └─────────┘  └─────────┘  └─────────┘     │
-│                                             │
-│                    [+]                      │  ← FAB（新規作成）
-└─────────────────────────────────────────────┘
-```
-
-**コンポーネント:**
-- Header (Logo, SearchBar, UserMenu)
-- MemoCard (title, preview, tags, date)
-- MemoGrid (infinite scroll)
-- FloatingActionButton
-
-### 5.5 SCR-003: メモ作成画面
-
-**レイアウト:**
-```
-┌─────────────────────────────────────────────┐
-│  [←戻る]              新規メモ              │
-├─────────────────────────────────────────────┤
-│                                             │
-│  タイトル（任意）                           │
-│  ┌─────────────────────────────────────┐   │
-│  │                                     │   │
-│  └─────────────────────────────────────┘   │
-│                                             │
-│  本文 *                                     │
-│  ┌─────────────────────────────────────┐   │
-│  │                                     │   │
-│  │                                     │   │
-│  │                                     │   │
-│  └─────────────────────────────────────┘   │
-│                                             │
-│  関連キーワード（任意）                     │
-│  ┌─────────────────────────────────────┐   │
-│  │                                     │   │
-│  └─────────────────────────────────────┘   │
-│                                             │
-│  タグ（任意）                               │
-│  ┌─────────────────────────────────────┐   │
-│  │ [tag1] [tag2] [+追加]               │   │
-│  └─────────────────────────────────────┘   │
-│                                             │
-│              [キャンセル] [保存]            │
-└─────────────────────────────────────────────┘
-```
-
-**コンポーネント:**
-- MemoForm
-- TagInput (autocomplete)
-- SubmitButton (with loading state)
-
-### 5.6 SCR-005: 検索結果画面
-
-**レイアウト:**
-```
-┌─────────────────────────────────────────────┐
-│  [Logo]     [検索バー: "会議"]  [Avatar]    │
-├─────────────────────────────────────────────┤
-│  「会議」の検索結果: 5件                    │
-├─────────────────────────────────────────────┤
-│  ┌─────────────────────────────────┬──────┐ │
-│  │ ミーティングの議事録            │ 92%  │ │  ← 類似度スコア
-│  │ タグ: meeting, work             │      │ │
-│  └─────────────────────────────────┴──────┘ │
-│  ┌─────────────────────────────────┬──────┐ │
-│  │ 打ち合わせメモ                  │ 85%  │ │
-│  │ タグ: mtg                       │      │ │
-│  └─────────────────────────────────┴──────┘ │
-│  ┌─────────────────────────────────┬──────┐ │
-│  │ チームMTGで出たアイデア         │ 78%  │ │
-│  │ タグ: idea, meeting             │      │ │
-│  └─────────────────────────────────┴──────┘ │
-└─────────────────────────────────────────────┘
-```
-
-**コンポーネント:**
-- SearchResultCard (with similarity badge)
-- SearchResultList
-- EmptyState (検索結果なし)
+1. **テーマ切替**: ライト / ダーク / 自動（`prefers-color-scheme` に追従）。localStorage に永続化。
+2. **テンプレート管理**: テンプレートのCRUD（FR-TEMPLATE-001）。
+3. **アカウント**: ログアウト。
+4. **バージョン表示**: `VITE_VERSION` を表示。
 
 ---
 
@@ -527,50 +603,34 @@ export interface User {
 └─────────────────┘     └──────────────────┘
 ```
 
-### 6.2 Firebase Functions エンドポイント
+### 6.2 Firebase Functions
 
-#### generateEmbedding
+Functions は「① Firestoreトリガー（埋め込み生成・OGP・タグ集計）」と「② HTTPエンドポイント（検索）」で構成される。**埋め込み生成用の `generateEmbedding` onCall関数は存在しない**（トリガーに置き換わっている）。
 
-| 項目 | 内容 |
-|------|------|
-| 関数名 | `generateEmbedding` |
-| タイプ | onCall (v2) |
-| 認証 | Firebase Auth必須 |
+#### ① Firestore トリガー
 
-**リクエスト:**
-```typescript
-interface GenerateEmbeddingRequest {
-  text: string;  // 埋め込み対象テキスト
-}
-```
+| トリガー | 種別 | 対象 | 処理内容 |
+|---------|------|------|---------|
+| `onCreateNote` | `onDocumentCreated` | `users/{uid}/notes/{noteId}` | OGP取得 → ツイート引用挿入 → 埋め込み生成 → タグcount同期 |
+| `onUpdateNote` | `onDocumentUpdated` | 同上 | 変更検知して上記を再実行（`updatedBy: 'trigger'` はスキップ） |
+| `onDeleteNote` | `onDocumentDeleted` | 同上 | タグcountのデクリメント／削除 |
 
-**レスポンス:**
-```typescript
-interface GenerateEmbeddingResponse {
-  embedding: number[];  // 1536次元ベクトル
-}
-```
+いずれも `triggerOnce` で冪等化。OpenAI APIキーは Functions Secret で保護。
 
-**処理内容:**
-1. 認証トークンを検証
-2. テキストをOpenAI APIに送信
-3. 生成されたベクトルを返却
-
-#### searchNotes
+#### ② 検索エンドポイント（HTTP）
 
 | 項目 | 内容 |
 |------|------|
-| 関数名 | `searchNotes` |
-| タイプ | onCall (v2) |
-| 認証 | Firebase Auth必須 |
+| メソッド / パス | `POST {FUNCTIONS_BASE_URL}/search/notes`（Express router 経由） |
+| タイプ | HTTP関数（onCallではない） |
+| 認証 | `Authorization: Bearer {ID Token}` を `authMiddleware` で検証 |
 
 **リクエスト:**
 ```typescript
 interface SearchNotesRequest {
-  query: string;       // 検索クエリ
-  limit?: number;      // 最大件数（デフォルト: 10）
-  tags?: string[];     // タグフィルタ
-  minSimilarity?: number;  // 最低類似度（デフォルト: 0.3）
+  query: string;           // 検索クエリ（必須）
+  limit?: number;          // 最大件数（1〜50、デフォルト: 10 / クライアントは20を送信）
+  minSimilarity?: number;  // 最低類似度（0〜1、デフォルト: 0.3 / クライアントは0.2を送信）
 }
 ```
 
@@ -579,16 +639,18 @@ interface SearchNotesRequest {
 interface SearchNotesResponse {
   results: Array<{
     note: Note;
-    similarity: number;
+    similarity: number;  // 1 - distance
   }>;
 }
 ```
 
 **処理内容:**
-1. 認証トークンを検証
-2. クエリをベクトル化
-3. Firestore Vector Searchで類似ノートを検索
-4. 結果を類似度でソートして返却
+1. IDトークンを検証（`authMiddleware`）
+2. クエリを OpenAI `text-embedding-3-small` でベクトル化
+3. Firestore Vector Search（`findNearest`, `distanceMeasure: 'COSINE'`）で近傍ノートを取得
+4. `similarity = 1 - distance` に変換し、`minSimilarity` でフィルタ・類似度降順ソートして返却
+
+> 注: `tags` によるフィルタ併用は未実装（FR-SEARCH-002）。
 
 ### 6.3 クライアントサイドAPI（Firestore直接アクセス）
 
@@ -599,8 +661,13 @@ TanStack Queryを使用してFirestoreに直接アクセスする操作:
 | メモ一覧取得 | `['notes', uid]` | ページネーション付き |
 | メモ詳細取得 | `['note', noteId]` | 単一メモ |
 | メモ作成 | mutation | invalidate: `['notes']` |
-| メモ更新 | mutation | invalidate: `['notes']`, `['note', id]` |
+| メモ更新 | mutation | invalidate: `['notes']`, `['note', id]`（詳細は楽観的更新） |
 | メモ削除 | mutation | invalidate: `['notes']` |
+| ピン留めトグル | mutation | invalidate: `['notes', uid]` |
+| 固定メモ一覧 | `['notes', uid, {pinned:true}]` | 無限スクロール |
+| セマンティック検索 | `['searchNotes', query]` | HTTP API 経由 |
+| タグ一覧 / 最近使ったタグ | onSnapshot購読 | サジェスト用 |
+| テンプレート一覧 | onSnapshot購読 | 設定・作成モーダル用 |
 
 ---
 
@@ -610,14 +677,21 @@ TanStack Queryを使用してFirestoreに直接アクセスする操作:
 
 | 技術 | バージョン | 用途 |
 |------|-----------|------|
+| React | 19.x | UIライブラリ |
 | TanStack Start | 1.x | フルスタックReactフレームワーク（SPAモード） |
 | TanStack Router | 1.x | 型安全なファイルベースルーティング |
 | TanStack Query | 5.x | サーバー状態管理、キャッシュ |
 | TypeScript | 5.x | 型安全な開発 |
-| Tailwind CSS | 3.x | ユーティリティファーストCSS |
+| Tailwind CSS | 4.x | ユーティリティファーストCSS |
+| shadcn/ui（Radix UI） | - | UIコンポーネント |
 | React Hook Form | 7.x | フォーム状態管理 |
-| Zod | 3.x | スキーマバリデーション |
-| Vite | 5.x | ビルドツール（TanStack Start内蔵） |
+| Zod | 4.x | スキーマバリデーション |
+| CodeMirror | 6.x | 本文エディタ（マークダウン入力補助） |
+| sonner | 2.x | トースト通知 |
+| next-themes | 0.4.x | テーマ（ライト/ダーク/自動）切替 |
+| dayjs | 1.x | 日時整形 |
+| Vite | 8.x | ビルドツール |
+| vite-plugin-pwa | 1.x | PWA対応 |
 
 ### 7.2 バックエンド / インフラ
 
@@ -625,62 +699,85 @@ TanStack Queryを使用してFirestoreに直接アクセスする操作:
 |------|-----------|------|
 | Firebase Authentication | - | ユーザー認証（Google OAuth） |
 | Cloud Firestore | - | NoSQLデータベース + Vector Search |
-| Firebase Functions | v2 | サーバーレス関数（埋め込み生成） |
+| Firebase Functions | v2 | Firestoreトリガー（埋め込み生成・OGP取得・タグ集計）+ 検索HTTP API |
+| firebase-admin | 14.x | Functions内のFirestore/Auth操作 |
 | Firebase Hosting | - | 静的ホスティング + CDN |
-| OpenAI API | - | ベクトル埋め込み生成（text-embedding-3-small） |
+| OpenAI API | openai 7.x | ベクトル埋め込み生成（text-embedding-3-small） |
+| Express | 4.x | Functions内のHTTPルーティング（検索エンドポイント） |
+| @t3-oss/env-core | 0.13.x | 環境変数の型安全なバリデーション（Functions） |
 
 ### 7.3 開発ツール
 
 | ツール | 用途 |
 |--------|------|
 | pnpm | パッケージマネージャー |
-| ESLint + Prettier | コード品質・フォーマット |
-| Vitest | ユニットテスト |
-| Playwright | E2Eテスト |
-| GitHub Actions | CI/CD |
+| Turborepo | monorepoのタスク実行 |
+| Biome | コード品質・フォーマット（Lint / Format） |
+| cspell | スペルチェック |
+| Vitest | ユニットテスト（web） |
+| tsup | Functionsのビルド |
+| GitHub Actions | CI（web / functions / common の各Lint） |
 | Firebase Emulator Suite | ローカル開発環境 |
 
-### 7.4 TanStack Start プロジェクト構成
+### 7.4 プロジェクト構成（monorepo）
+
+pnpm workspace + Turborepo による monorepo 構成。`apps/web`（フロントエンド）、`apps/functions`（Firebase Functions）、`packages/common`（共通の型定義）で構成される。
 
 ```
-vector-memo/
-├── app/
-│   ├── routes/
-│   │   ├── __root.tsx          # ルートレイアウト
-│   │   ├── index.tsx           # / (メモ一覧)
-│   │   ├── login.tsx           # /login
-│   │   ├── new.tsx             # /new (メモ作成)
-│   │   ├── note.$noteId.tsx     # /note/:noteId (詳細)
-│   │   ├── search.tsx          # /search
-│   │   └── settings.tsx        # /settings
-│   ├── components/
-│   │   ├── ui/                 # 汎用UIコンポーネント
-│   │   ├── note/                # メモ関連コンポーネント
-│   │   └── layout/             # レイアウトコンポーネント
-│   ├── hooks/
-│   │   ├── useAuth.ts
-│   │   ├── useNotes.ts
-│   │   └── useSearch.ts
-│   ├── lib/
-│   │   ├── firebase.ts         # Firebase初期化
-│   │   ├── firestore.ts        # Firestore操作
-│   │   └── functions.ts        # Firebase Functions呼び出し
-│   ├── types/
-│   │   └── note.ts
-│   ├── router.tsx
-│   ├── routeTree.gen.ts        # 自動生成
-│   └── client.tsx
-├── functions/                   # Firebase Functions
-│   ├── src/
-│   │   ├── index.ts
-│   │   ├── generateEmbedding.ts
-│   │   └── searchNotes.ts
-│   └── package.json
-├── public/
+vectornote/
+├── apps/
+│   ├── web/                      # フロントエンド（TanStack Start SPAモード）
+│   │   ├── src/
+│   │   │   ├── routes/           # ファイルベースルーティング
+│   │   │   │   ├── __root.tsx
+│   │   │   │   ├── login.tsx     # /login
+│   │   │   │   ├── _authed.tsx   # 認証ガード（レイアウトルート）
+│   │   │   │   └── _authed/
+│   │   │   │       ├── index.tsx     # / (メモ一覧)
+│   │   │   │       ├── search.tsx    # /search
+│   │   │   │       ├── settings.tsx  # /settings
+│   │   │   │       └── about.tsx     # /about
+│   │   │   ├── features/         # 機能別モジュール
+│   │   │   │   ├── notes/        # メモ（hooks / components / schemas）
+│   │   │   │   ├── search/       # 検索
+│   │   │   │   ├── tags/         # タグ
+│   │   │   │   ├── templates/    # テンプレート
+│   │   │   │   └── settings/     # 設定（テーマ）
+│   │   │   ├── components/       # 汎用コンポーネント（ui/ など）
+│   │   │   ├── hooks/            # 汎用フック
+│   │   │   ├── infrastructure/   # データアクセス層
+│   │   │   │   ├── firestore/    # Firestore操作（notes/tags/templates/users）
+│   │   │   │   └── api/          # Functions HTTP呼び出し（searchApi）
+│   │   │   ├── providers/        # FirebaseAuthProvider など
+│   │   │   ├── lib/              # firebase初期化 / codemirror など
+│   │   │   ├── router.tsx
+│   │   │   └── routeTree.gen.ts  # 自動生成
+│   │   ├── public/
+│   │   ├── vite.config.ts
+│   │   └── package.json
+│   └── functions/                # Firebase Functions
+│       ├── src/
+│       │   ├── index.ts
+│       │   ├── router.ts         # Express router（検索エンドポイント）
+│       │   ├── api/search/       # searchNotes
+│       │   ├── triggers/         # onCreateNote / onUpdateNote / onDeleteNote
+│       │   ├── infrastructure/firestore/  # notes/tags/users
+│       │   ├── middleware/       # auth
+│       │   ├── lib/              # openai / twitter / firebase
+│       │   └── utils/            # embedding / ogp / tweetQuote など
+│       ├── tsup.config.ts
+│       └── package.json
+├── packages/
+│   └── common/                   # 共通の型定義
+│       └── src/
+│           ├── entities/         # Note / User / Tag / Template / Auth
+│           └── utils/            # twitter など
 ├── firestore.rules
 ├── firestore.indexes.json
 ├── firebase.json
-├── app.config.ts               # TanStack Start設定
+├── pnpm-workspace.yaml
+├── turbo.json
+├── biome.jsonc
 ├── package.json
 └── tsconfig.json
 ```
@@ -691,66 +788,45 @@ vector-memo/
 
 ### 8.1 Firestoreセキュリティルール
 
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // ユーザードキュメント
-    match /users/{userId} {
-      allow read, write: if request.auth != null 
-                         && request.auth.uid == userId;
-      
-      // メモサブコレクション
-      match /notes/{noteId} {
-        allow read, write: if request.auth != null 
-                           && request.auth.uid == userId;
-        
-        // バリデーション
-        allow create: if request.resource.data.content is string
-                      && request.resource.data.content.size() > 0
-                      && request.resource.data.content.size() <= 10000;
-        
-        allow update: if request.resource.data.content is string
-                      && request.resource.data.content.size() > 0
-                      && request.resource.data.content.size() <= 10000;
-      }
-    }
-  }
-}
-```
+- ユーザーは自身の `users/{uid}` 配下（notes / tags / templates サブコレクション含む）のみ read/write 可能とする（`isSignedIn()` かつ `isUser(userId)`）。
+- 各コレクションで作成/更新時にスキーマバリデーション関数（フィールド数・型の検証）を通す。
+  - `notes`: フィールド数10。`content`(string) / `title`(string \| null) / `keywords`(string) / `tags`(list) / `embedding` / `isPinned`(bool) / `ogp`(map \| null) / `updatedBy`(string) / `createdAt` / `updatedAt`。read/create/update/delete を許可。
+  - `templates`: フィールド数7。`name` / `body` / `defaultTitle` / `defaultKeyword` / `defaultTags` / `createdAt` / `updatedAt`。read/create/update/delete を許可。
+  - `tags`: **read のみ許可**（作成・更新・削除は Functions トリガー = firebase-admin 経由でのみ行い、クライアントからは書き込めない）。
+  - `users`: フィールド数3（`email` / `createdAt` / `updatedAt`）。read/create/update を許可。
+
+実際のルールは `firestore.rules` を参照。
 
 ### 8.2 APIキー管理
 
 | キー | 管理方法 | 露出範囲 |
 |------|---------|---------|
-| Firebase Config | 環境変数（公開可） | クライアント |
-| OpenAI API Key | Firebase Functions Secret | サーバーのみ |
+| Firebase Config | 環境変数（`VITE_*`、公開可） | クライアント |
+| OpenAI API Key | Functions の `.env`（`@t3-oss/env-core` で検証） | サーバーのみ |
 
-**Firebase Functions でのシークレット設定:**
-```bash
-firebase functions:secrets:set OPENAI_API_KEY
-```
+- OpenAI API Key は `apps/functions/.env` に `OPENAI_API_KEY` として置き、`process.env` から参照する（`defineSecret` は使わない）。
 
 ### 8.3 入力値検証
 
 **クライアントサイド（Zod）:**
 ```typescript
+// apps/web/src/features/notes/schemas/noteSchema.ts
 import { z } from 'zod';
 
-export const noteSchema = z.object({
+export const noteFormSchema = z.object({
   content: z.string().min(1).max(10000),
-  title: z.string().max(100).optional(),
-  keywords: z.array(z.string()).optional(),
-  tags: z.array(z.string().max(50)).max(10).optional(),
+  title: z.string().max(100).optional().default(''),
+  keywords: z.string().max(500).optional().default(''),
+  tags: z.array(z.string().max(50)).max(10).optional().default([]),
 });
 
-export type NoteInput = z.infer<typeof noteSchema>;
+export type NoteFormValues = z.infer<typeof noteFormSchema>;
 ```
 
 **サーバーサイド（Firebase Functions）:**
-- 同じZodスキーマを共有
-- 認証トークンの検証
-- レートリミット実装
+- 検索エンドポイントのリクエストは express-validator で検証（`query` 必須、`limit` 1〜50、`minSimilarity` 0〜1）
+- IDトークンの検証（`authMiddleware`）
+- Firestore セキュリティルールでもスキーマ・所有権を検証（8.1）
 
 ---
 
@@ -767,25 +843,26 @@ export type NoteInput = z.infer<typeof noteSchema>;
 
 ### 9.2 Phase 2: 機能拡張（将来）
 
-| 優先度 | 機能 | 概要 |
-|--------|------|------|
-| 高 | Slack連携 | Slackメッセージの自動インポート |
-| 高 | Notion連携 | Notionページの同期 |
-| 中 | 自動タグ付け | GPTによるタグ自動生成 |
-| 中 | マルチモーダル | 画像のベクトル検索対応 |
-| 低 | マークダウン対応 | 本文のMarkdown記法での入力・プレビュー表示 |
-| 低 | URLスクレイピング | 本文にURLが含まれる場合、リンク先の内容を取得して保存 |
-| 低 | ツイート保存 | ツイートURLの場合、本文テキストと画像を取得して保存 |
-| 低 | チーム共有 | メモの共有・コラボレーション |
-| 低 | モバイルアプリ | React Native版 |
+| 優先度 | 機能 | 概要 | 状況 |
+|--------|------|------|------|
+| 高 | Slack連携 | Slackメッセージの自動インポート | 未着手 |
+| 高 | Notion連携 | Notionページの同期 | 未着手 |
+| 中 | 自動タグ付け | GPTによるタグ自動生成 | 未着手 |
+| 中 | マルチモーダル | 画像のベクトル検索対応 | 未着手 |
+| 低 | マークダウン対応 | 本文のMarkdown記法での入力・プレビュー表示 | 入力補助は実装済（FR-RICH-003）。プレビューは未実装 |
+| 低 | URLスクレイピング | 本文にURLが含まれる場合、リンク先の内容を取得して保存 | 実装済（OGP取得 FR-RICH-001） |
+| 低 | ツイート保存 | ツイートURLの場合、本文テキストと画像を取得して保存 | 実装済（ツイート引用 FR-RICH-002。画像取得は未対応） |
+| 低 | チーム共有 | メモの共有・コラボレーション | 未着手 |
+| 低 | モバイルアプリ | React Native版 | 未着手 |
 
 ### 9.3 リリース基準
 
 - [ ] 全機能要件（FR-*）の実装完了
-- [ ] 主要画面のE2Eテスト合格（カバレッジ80%以上）
 - [ ] パフォーマンス目標値の達成（Lighthouse スコア 90+）
 - [ ] セキュリティレビュー完了
 - [ ] ドキュメント整備（README、API仕様）
+
+> 注: E2Eテスト（Playwright）は現時点では未導入。ユニットテストは Vitest（web）を使用。
 
 ---
 
@@ -793,20 +870,29 @@ export type NoteInput = z.infer<typeof noteSchema>;
 
 ### 10.1 環境変数
 
-**`.env.local`（開発環境）:**
+**web（`apps/web/.env`）:**
 ```env
-VITE_FIREBASE_API_KEY=xxx
-VITE_FIREBASE_AUTH_DOMAIN=xxx.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=xxx
-VITE_FIREBASE_STORAGE_BUCKET=xxx.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=xxx
-VITE_FIREBASE_APP_ID=xxx
+VITE_ENV=localhost
+
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_MEASUREMENT_ID=
+
+VITE_USE_EMULATOR=true
+VITE_FUNCTIONS_BASE_URL=   # 検索APIのベースURL
+VITE_VERSION=              # 設定画面のバージョン表示
 ```
 
-**Firebase Functions（本番）:**
-```bash
-firebase functions:secrets:set OPENAI_API_KEY
+**functions（`apps/functions/.env`）:**
+```env
+OPENAI_API_KEY=
 ```
+
+- Functions の環境変数は `.env` で管理し `process.env` から参照する（`@t3-oss/env-core` で型安全に検証。ビルド時に `env-check.ts` で検証）。`defineSecret` / `firebase functions:secrets:set` は使用しない。
 
 ### 10.2 コスト概算
 
@@ -836,6 +922,7 @@ firebase functions:secrets:set OPENAI_API_KEY
 |------|-----------|---------|--------|
 | 2026-03-21 | 1.0 | 初版作成 | - |
 | 2026-03-23 | 1.1 | firestore-design.mdに基づきデータモデルを更新（memos→notes、usersフィールド整理、keywords型変更） | - |
+| 2026-09-21 | 1.2 | 実装との差分を反映。追加: テンプレート(FR-TEMPLATE)/ピン留め(FR-MEMO-005)/タグ集計・サジェスト(FR-TAG)/OGP・ツイート引用・マークダウン(FR-RICH)。設計変更: 作成・詳細をモーダル化（/new・/note を廃止）、Note型に isPinned/ogp/updatedBy 追加・embedding は VectorValue、埋め込みをトリガー方式に変更、検索を HTTP API 化。未実装明記: フィルタ検索・検索履歴・バッチ処理・MDプレビュー。UIレイアウト図・コンポーネント名を削除。技術スタック(§7)・プロジェクト構成(§7.4 monorepo)・セキュリティルール(§8.1)・環境変数(§8.2/§10.1)を実装に合わせて更新（Tailwind4/Zod4/Biome/Turborepo/tsup、Functions環境変数は.env+t3-env管理） | - |
 
 ---
 
