@@ -100,7 +100,7 @@ export const NoteList = ({ tag, viewMode, onClickCreate }: NoteListProps) => {
             ))}
           </div>
         ) : (
-          <div className="divide-y overflow-hidden rounded-lg border">
+          <div className="divide-y overflow-hidden rounded-lg border bg-card">
             {notes.map((note) => (
               <NoteListItem
                 key={note.noteId}

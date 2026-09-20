@@ -9,7 +9,10 @@ type SearchBarProps = {
   isLoading?: boolean
 }
 
-export const SearchBar = ({ initialQuery = '', isLoading = false }: SearchBarProps) => {
+export const SearchBar = ({
+  initialQuery = '',
+  isLoading = false,
+}: SearchBarProps) => {
   const [inputValue, setInputValue] = useState(initialQuery)
   const navigate = useNavigate()
 
@@ -34,12 +37,17 @@ export const SearchBar = ({ initialQuery = '', isLoading = false }: SearchBarPro
       <Input
         type="text"
         placeholder="セマンティック検索..."
+        aria-label="メモを検索"
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
         className="flex-1"
       />
-      <Button onClick={handleSearch} disabled={isLoading || !inputValue.trim()}>
+      <Button
+        variant="secondary"
+        onClick={handleSearch}
+        disabled={isLoading || !inputValue.trim()}
+      >
         <SearchIcon className="size-4" />
         検索
       </Button>

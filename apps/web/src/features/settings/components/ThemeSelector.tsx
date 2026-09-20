@@ -25,11 +25,12 @@ export const ThemeSelector = () => {
         <button
           key={option.value}
           type="button"
+          aria-pressed={mode === option.value}
           onClick={() => selectMode(option.value)}
           className={cn(
-            'flex flex-1 flex-col items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors',
+            'flex flex-1 flex-col items-center gap-3 rounded-md border px-4 py-6 text-sm font-medium transition-colors',
             mode === option.value
-              ? 'border-primary bg-primary text-primary-foreground'
+              ? 'border-foreground bg-accent text-foreground'
               : 'border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >

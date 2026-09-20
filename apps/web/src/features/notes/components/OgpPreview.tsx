@@ -17,7 +17,7 @@ export const OgpPreview = ({ ogp }: OgpPreviewProps) => {
       href={ogp.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="mt-2 block overflow-hidden rounded-md border transition-colors hover:bg-muted/50"
+      className="mt-2 block overflow-hidden rounded-md border bg-muted transition-colors hover:bg-accent"
       onClick={(e) => e.stopPropagation()}
     >
       {ogp.image && (

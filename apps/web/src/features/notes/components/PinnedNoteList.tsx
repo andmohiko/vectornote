@@ -76,9 +76,7 @@ export const PinnedNoteList = ({ viewMode }: PinnedNoteListProps) => {
   if (notes.length === 0) {
     return (
       <div className="flex flex-col items-center gap-4 py-16 text-center">
-        <p className="text-muted-foreground">
-          固定されたメモはありません。
-        </p>
+        <p className="text-muted-foreground">固定されたメモはありません。</p>
       </div>
     )
   }
@@ -97,7 +95,7 @@ export const PinnedNoteList = ({ viewMode }: PinnedNoteListProps) => {
             ))}
           </div>
         ) : (
-          <div className="divide-y overflow-hidden rounded-lg border">
+          <div className="divide-y overflow-hidden rounded-lg border bg-card">
             {notes.map((note) => (
               <NoteListItem
                 key={note.noteId}

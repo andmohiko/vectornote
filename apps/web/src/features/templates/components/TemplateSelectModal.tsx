@@ -41,7 +41,9 @@ export const TemplateSelectModal = ({
       <DialogContent className="flex h-full max-h-[500px] w-full max-w-[500px] flex-col overflow-hidden sm:max-w-[500px]">
         <DialogHeader className="shrink-0">
           <DialogTitle>テンプレートを選択</DialogTitle>
-          <DialogDescription className="sr-only">使用するテンプレートを選択します</DialogDescription>
+          <DialogDescription className="sr-only">
+            使用するテンプレートを選択します
+          </DialogDescription>
         </DialogHeader>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           {isLoading ? (
@@ -64,7 +66,7 @@ export const TemplateSelectModal = ({
                 <button
                   key={template.templateId}
                   type="button"
-                  className="w-full rounded-lg border p-3 text-left transition-colors hover:bg-accent"
+                  className="w-full space-y-2 rounded-lg border bg-muted p-5 text-left transition-colors hover:border-input hover:bg-accent"
                   onClick={() => handleSelect(template)}
                 >
                   <p className="font-medium">{template.name}</p>

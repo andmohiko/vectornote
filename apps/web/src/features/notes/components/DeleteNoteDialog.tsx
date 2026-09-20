@@ -46,7 +46,7 @@ export const DeleteNoteDialog = ({
             キャンセル
           </Button>
           <Button
-            className="border-transparent bg-red-600 text-white hover:bg-red-700 hover:text-white"
+            variant="destructive"
             onClick={handleDelete}
             disabled={isPending}
           >
