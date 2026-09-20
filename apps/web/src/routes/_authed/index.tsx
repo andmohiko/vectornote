@@ -47,7 +47,7 @@ function HomePage() {
         <button
           className={`flex-1 pb-2 text-center text-sm font-medium transition-colors ${
             activeTab === 'latest'
-              ? 'border-b-2 border-primary text-foreground'
+              ? 'border-b-2 border-foreground text-foreground'
               : 'text-muted-foreground hover:text-foreground'
           }`}
           onClick={() => setActiveTab('latest')}
@@ -58,7 +58,7 @@ function HomePage() {
         <button
           className={`flex-1 pb-2 text-center text-sm font-medium transition-colors ${
             activeTab === 'pinned'
-              ? 'border-b-2 border-primary text-foreground'
+              ? 'border-b-2 border-foreground text-foreground'
               : 'text-muted-foreground hover:text-foreground'
           }`}
           onClick={() => setActiveTab('pinned')}
@@ -72,7 +72,7 @@ function HomePage() {
             aria-label="カード表示"
             className={`rounded p-1.5 transition-colors ${
               viewMode === 'card'
-                ? 'bg-background text-foreground shadow-sm'
+                ? 'bg-accent text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
             onClick={() => setViewMode('card')}
@@ -84,7 +84,7 @@ function HomePage() {
             aria-label="リスト表示"
             className={`rounded p-1.5 transition-colors ${
               viewMode === 'list'
-                ? 'bg-background text-foreground shadow-sm'
+                ? 'bg-accent text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
             onClick={() => setViewMode('list')}
@@ -99,9 +99,9 @@ function HomePage() {
           <Link
             to="/"
             search={{}}
-            className={`shrink-0 rounded-full border px-3 py-1 text-sm transition-colors ${
+            className={`shrink-0 rounded-md border px-3 py-1 text-sm transition-colors ${
               !tag
-                ? 'bg-primary text-primary-foreground'
+                ? 'border-input bg-accent text-foreground'
                 : 'bg-background text-muted-foreground hover:bg-accent'
             }`}
           >
@@ -112,9 +112,9 @@ function HomePage() {
               key={t.tagId}
               to="/"
               search={{ tag: t.label }}
-              className={`shrink-0 rounded-full border px-3 py-1 text-sm transition-colors ${
+              className={`shrink-0 rounded-md border px-3 py-1 text-sm transition-colors ${
                 tag === t.label
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'border-input bg-accent text-foreground'
                   : 'bg-background text-muted-foreground hover:bg-accent'
               }`}
             >

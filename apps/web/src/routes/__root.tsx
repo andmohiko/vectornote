@@ -4,19 +4,19 @@ import {
   createRootRouteWithContext,
   HeadContent,
   Scripts,
+  useLocation,
 } from '@tanstack/react-router'
-import { z } from 'zod'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
+import { z } from 'zod'
 import Footer from '@/components/Footer'
 import Header from '@/components/Header'
 import { SideNav } from '@/components/SideNav'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { Toaster } from '@/components/ui/sonner'
+import { useServiceWorker } from '@/hooks/useServiceWorker'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import TanStackQueryProvider from '../integrations/tanstack-query/root-provider'
-import { useLocation } from '@tanstack/react-router'
 import { Providers } from '../providers'
-import { useServiceWorker } from '@/hooks/useServiceWorker'
 import appCss from '../styles.css?url'
 
 interface MyRouterContext {
@@ -45,7 +45,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
       {
         name: 'theme-color',
-        content: '#000000',
+        content: '#010102',
       },
       {
         name: 'apple-mobile-web-app-capable',
@@ -92,9 +92,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       <SideNav />
       <SidebarInset className="min-w-0">
         <Header />
-        <div className="flex-1 px-4">
-          {children}
-        </div>
+        <div className="flex-1 px-4">{children}</div>
         <Footer />
       </SidebarInset>
     </SidebarProvider>
