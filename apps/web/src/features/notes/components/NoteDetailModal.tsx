@@ -24,8 +24,13 @@ type NoteDetailModalProps = {
 
 export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
   const { mutateAsync, isPending } = useUpdateNoteMutation(note?.noteId ?? '')
-  const { mutateAsync: togglePin, isPending: isTogglePinPending } = useTogglePinMutation(note?.noteId ?? '')
-  const { isOpen: deleteDialogOpen, open: openDeleteDialog, close: closeDeleteDialog } = useDisclosure()
+  const { mutateAsync: togglePin, isPending: isTogglePinPending } =
+    useTogglePinMutation(note?.noteId ?? '')
+  const {
+    isOpen: deleteDialogOpen,
+    open: openDeleteDialog,
+    close: closeDeleteDialog,
+  } = useDisclosure()
   const [isCopied, setIsCopied] = useState(false)
   const [localIsPinned, setLocalIsPinned] = useState<boolean | null>(null)
   const isDirtyRef = useRef(false)
@@ -40,7 +45,11 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
 
   const handleClose = useCallback(() => {
     if (isDirtyRef.current) {
-      if (!window.confirm('編集内容が保存されていません。閉じてもよろしいですか？')) {
+      if (
+        !window.confirm(
+          '編集内容が保存されていません。閉じてもよろしいですか？',
+        )
+      ) {
         return
       }
     }
@@ -84,61 +93,67 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
             <>
               <DialogHeader className="shrink-0">
                 <DialogTitle>メモを編集</DialogTitle>
-                <DialogDescription className="sr-only">メモの内容を編集します</DialogDescription>
+                <DialogDescription className="sr-only">
+                  メモの内容を編集します
+                </DialogDescription>
               </DialogHeader>
               <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-              <NoteForm
-                expandContent
-                autoFocusContent
-                onSubmit={handleSubmit}
-                onSaveShortcut={handleSave}
-                onDirtyChange={handleDirtyChange}
-                contentLabelRight={
-                  <button
-                    type="button"
-                    className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                    onClick={handleCopyContent}
-                    aria-label="本文をコピー"
-                  >
-                    {isCopied ? (
-                      <Check className="size-4" />
-                    ) : (
-                      <Copy className="size-4" />
-                    )}
-                  </button>
-                }
-                defaultValues={{
-                  content: note.content,
-                  title: note.title ?? '',
-                  keywords: note.keywords ?? '',
-                  tags: note.tags,
-                }}
-                submitLabel="更新"
-                isPending={isPending}
-                footerLeft={
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="border-transparent bg-red-600 text-white hover:bg-red-700 hover:text-white"
-                    onClick={openDeleteDialog}
-                  >
-                    削除
-                  </Button>
-                }
-                submitLeft={
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="outline"
-                    onClick={handleTogglePin}
-                    disabled={isTogglePinPending}
-                    aria-label={isPinned ? '固定解除' : '固定する'}
-                    className="size-8"
-                  >
-                    {isPinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
-                  </Button>
-                }
-              />
+                <NoteForm
+                  expandContent
+                  autoFocusContent
+                  onSubmit={handleSubmit}
+                  onSaveShortcut={handleSave}
+                  onDirtyChange={handleDirtyChange}
+                  contentLabelRight={
+                    <button
+                      type="button"
+                      className="rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                      onClick={handleCopyContent}
+                      aria-label="本文をコピー"
+                    >
+                      {isCopied ? (
+                        <Check className="size-4" />
+                      ) : (
+                        <Copy className="size-4" />
+                      )}
+                    </button>
+                  }
+                  defaultValues={{
+                    content: note.content,
+                    title: note.title ?? '',
+                    keywords: note.keywords ?? '',
+                    tags: note.tags,
+                  }}
+                  submitLabel="更新"
+                  isPending={isPending}
+                  footerLeft={
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={openDeleteDialog}
+                    >
+                      削除
+                    </Button>
+                  }
+                  submitLeft={
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="outline"
+                      onClick={handleTogglePin}
+                      disabled={isTogglePinPending}
+                      aria-label={isPinned ? '固定解除' : '固定する'}
+                      className="size-8"
+                    >
+                      {isPinned ? (
+                        <PinOff className="size-4" />
+                      ) : (
+                        <Pin className="size-4" />
+                      )}
+                    </Button>
+                  }
+                />
               </div>
             </>
           )}
@@ -149,7 +164,9 @@ export const NoteDetailModal = ({ note, onClose }: NoteDetailModalProps) => {
         <DeleteNoteDialog
           noteId={note.noteId}
           open={deleteDialogOpen}
-          onOpenChange={(open) => open ? openDeleteDialog() : closeDeleteDialog()}
+          onOpenChange={(open) =>
+            open ? openDeleteDialog() : closeDeleteDialog()
+          }
           onDeleted={onClose}
         />
       )}

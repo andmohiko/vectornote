@@ -1,8 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
-
+import { Button } from '@/components/ui/button'
 import { auth } from '@/lib/firebase'
 import { useFirebaseAuthContext } from '@/providers/FirebaseAuthProvider'
-import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute('/login')({
   beforeLoad: async () => {
@@ -18,9 +17,9 @@ function LoginPage() {
   const { login } = useFirebaseAuthContext()
 
   return (
-    <main className="flex h-screen w-screen items-center justify-center">
+    <main className="login-canvas flex h-screen w-screen items-center justify-center">
       <div className="flex flex-col items-center gap-6">
-        <h1 className="text-2xl font-bold">VectorNote</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">VectorNote</h1>
         <Button onClick={login}>Googleでログイン</Button>
       </div>
     </main>

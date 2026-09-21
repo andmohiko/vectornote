@@ -105,7 +105,7 @@ export const MarkdownEditor = ({
       aria-multiline="true"
       tabIndex={0}
       className={cn(
-        'flex w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none md:text-sm dark:bg-input/30',
+        'flex w-full rounded-md border border-input bg-card px-3 py-2 text-base transition-colors outline-none md:text-sm dark:bg-card',
         isFocused && 'border-ring ring-3 ring-ring/50',
         className,
       )}

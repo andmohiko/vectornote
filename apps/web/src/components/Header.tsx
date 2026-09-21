@@ -10,17 +10,20 @@ export default function Header() {
   const q = typeof search.q === 'string' ? search.q : ''
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-[var(--header-bg)] backdrop-blur-sm">
+    <header className="sticky top-0 z-50 border-b border-border bg-background">
       <div className="flex items-center gap-4 px-4 py-3">
-        <SidebarTrigger />
-        <Link to="/" className="shrink-0 text-sm font-semibold text-foreground no-underline hover:text-foreground">
+        <SidebarTrigger aria-label="サイドバーを切り替え" />
+        <Link
+          to="/"
+          className="shrink-0 text-sm font-semibold text-foreground no-underline hover:text-foreground"
+        >
           VectorNote
         </Link>
         <div className="flex-1">
           <SearchBar initialQuery={q} />
         </div>
         <Button variant="ghost" size="icon" asChild>
-          <Link to="/settings">
+          <Link to="/settings" aria-label="設定">
             <Settings className="size-5" />
           </Link>
         </Button>

@@ -30,7 +30,7 @@ export const NoteListItem = ({ note, onClick }: NoteListItemProps) => {
       className="w-full text-left"
       onClick={() => onClick(note)}
     >
-      <div className="flex flex-col gap-1 px-4 py-3 transition-colors hover:bg-muted/50">
+      <div className="flex flex-col gap-1 px-4 py-3 transition-colors hover:bg-muted">
         <div className="flex items-center gap-2">
           <p className="flex-1 truncate text-sm font-medium text-foreground">
             {primary}

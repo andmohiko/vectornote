@@ -137,24 +137,24 @@ export const NoteCard = ({ note, onClick }: NoteCardProps) => {
   return (
     <button
       type="button"
-      className="h-full w-full text-left"
+      className="group h-full w-full rounded-lg text-left"
       onClick={() => onClick(note)}
     >
-      <Card className="h-full transition-colors hover:bg-muted/50">
+      <Card className="h-full min-h-64 transition-colors hover:border-input hover:bg-muted">
         <CardHeader>
           {note.title && (
-            <p className="line-clamp-1 text-xs text-muted-foreground">
+            <p className="line-clamp-2 text-base font-medium tracking-tight text-foreground">
               {note.title}
             </p>
           )}
-          <div className="line-clamp-10 whitespace-pre-wrap text-sm text-foreground">
+          <div className="line-clamp-10 whitespace-pre-wrap text-sm leading-7 text-secondary-foreground">
             {renderContentWithLinks(note.content)}
           </div>
         </CardHeader>
         <CardContent className="flex-1">
           {note.ogp && <OgpPreview ogp={note.ogp} />}
         </CardContent>
-        <CardFooter className="flex-col items-start gap-2 border-0 bg-transparent">
+        <CardFooter className="flex-col items-start gap-4 border-t bg-transparent">
           {note.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {note.tags.map((tag) => (

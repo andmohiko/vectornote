@@ -14,19 +14,19 @@ function SettingsPage() {
 
   return (
     <main className="pb-8 pt-14">
-      <h1 className="mb-8 text-xl font-semibold">設定</h1>
+      <h1 className="mb-8 text-xl font-semibold tracking-tight">設定</h1>
 
       <section className="mb-12">
         <ThemeCard />
       </section>
 
       <section className="mb-12">
-        <h2 className="mb-4 text-lg font-semibold">テンプレート管理</h2>
+        <h2 className="mb-4 text-lg font-medium">テンプレート管理</h2>
         <TemplateManageSection />
       </section>
 
       <section className="mb-12">
-        <h2 className="mb-4 text-lg font-semibold">アカウント</h2>
+        <h2 className="mb-4 text-lg font-medium">アカウント</h2>
         <Button variant="outline" onClick={logout}>
           ログアウト
         </Button>
